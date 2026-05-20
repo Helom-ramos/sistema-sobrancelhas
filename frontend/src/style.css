@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* Variáveis do design system */
+@theme {
+  --color-brand-50: #fdf8f0;
+  --color-brand-100: #faecd4;
+  --color-brand-200: #f4d9a8;
+  --color-brand-300: #edc073;
+  --color-brand-400: #e4a444;
+  --color-brand-500: #d98c24;
+  --color-brand-600: #c07019;
+  --color-brand-700: #9f5417;
+  --color-brand-800: #82421a;
+  --color-brand-900: #6b3618;
+
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-white text-gray-900 font-sans antialiased;
+}
