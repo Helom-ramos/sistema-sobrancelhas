@@ -1,0 +1,81 @@
+import { Router } from 'express'
+import Appointment from '../models/Appointment.js'
+import Client from '../models/Client.js'
+import Service from '../models/Service.js'
+import { requireAuth } from '../middleware/auth.middleware.js'
+import { sendBookingConfirmation } from '../services/whatsapp.service.js'
+
+const router = Router()
+
+// Público: criar agendamento (cliente)
+router.post('/', async (req, res, next) => {
+  try {
+    const { name, phone, serviceId, date, time, notes } = req.body
+    if (!name || !phone || !serviceId || !date || !time) {
+      return res.status(400).json({ error: 'Campos obrigatórios faltando' })
+    }
+
+    const service = await Service.findById(serviceId)
+    if (!service || !service.active) return res.status(400).json({ error: 'Serviço indisponível' })
+
+    // Upsert do cliente pelo telefone
+    let client = await Client.findOneAndUpdate(
+      { phone },
+      { name, phone },
+      { upsert: true, new: true }
+    )
+
+    const datetime = new Date(`${date}T${time}:00-03:00`)
+    const endDatetime = new Date(datetime.getTime() + service.duration * 60000)
+
+    const appointment = await Appointment.create({
+      client: client._id,
+      service: service._id,
+      datetime,
+      endDatetime,
+      notes,
+      createdBy: 'client'
+    })
+
+    // Envia WhatsApp (não bloqueia a resposta)
+    sendBookingConfirmation(appointment._id).catch(console.error)
+
+    res.status(201).json({ id: appointment._id, message: 'Agendamento criado com sucesso!' })
+  } catch (err) { next(err) }
+})
+
+// Admin: listar agendamentos
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const { date, status } = req.query
+    const filter = {}
+    if (date) {
+      const start = new Date(`${date}T00:00:00-03:00`)
+      const end = new Date(`${date}T23:59:59-03:00`)
+      filter.datetime = { $gte: start, $lte: end }
+    }
+    if (status) filter.status = status
+
+    const appointments = await Appointment.find(filter)
+      .populate('client')
+      .populate('service')
+      .sort({ datetime: 1 })
+    res.json(appointments)
+  } catch (err) { next(err) }
+})
+
+// Admin: atualizar status
+router.patch('/:id/status', requireAuth, async (req, res, next) => {
+  try {
+    const { status } = req.body
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate('client service')
+    if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' })
+    res.json(appointment)
+  } catch (err) { next(err) }
+})
+
+export default router
