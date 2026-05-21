@@ -1,73 +1,112 @@
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12" style="background:#0d0d0d">
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" style="background:#0d0b12">
 
-    <div v-if="loading" class="text-zinc-500 text-sm">Carregando...</div>
+    <!-- Glows -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
+         style="width:300px;height:200px;background:radial-gradient(ellipse,rgba(232,85,122,0.08) 0%,transparent 70%);z-index:0"/>
+    <div class="absolute bottom-0 left-0 pointer-events-none"
+         style="width:160px;height:160px;background:radial-gradient(ellipse,rgba(201,168,112,0.06) 0%,transparent 70%);z-index:0"/>
 
-    <!-- Erro -->
-    <div v-else-if="error" class="w-full max-w-xs text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4 mx-auto"
-           style="background:#1a0a10;border:2px solid #e8557a">
-        <span class="text-2xl">⚠️</span>
-      </div>
-      <h2 class="text-lg font-bold text-white mb-2">Ops!</h2>
-      <p class="text-zinc-400 text-sm mb-6">{{ error }}</p>
-      <button @click="$router.push('/')" class="w-full font-semibold py-4 rounded-2xl" style="background:#e8557a;color:#fff">
-        Voltar ao início
-      </button>
-    </div>
+    <!-- Botanical -->
+    <svg class="absolute top-0 right-0 pointer-events-none select-none" width="90" height="180" viewBox="0 0 90 180" fill="none" style="opacity:0.12;z-index:0">
+      <path d="M78 4 C70 44 55 84 40 124 C30 150 18 168 6 180" stroke="#e8557a" stroke-width="1" fill="none"/>
+      <path d="M72 30 C84 16 90 34 74 44 C63 38 72 30 72 30Z" fill="#e8557a"/>
+      <path d="M60 62 C72 48 80 64 64 74 C53 68 60 62 60 62Z" fill="#c9a870"/>
+      <path d="M50 94 C40 76 24 82 30 100 C36 114 50 104 50 94Z" fill="#e8557a"/>
+    </svg>
 
-    <!-- Cancelado com sucesso -->
-    <div v-else-if="cancelled" class="w-full max-w-xs text-center">
-      <div class="w-20 h-20 rounded-full flex items-center justify-center mb-6 mx-auto"
-           style="background:#1a1a1a;border:2px solid #3f3f3f">
-        <svg class="w-10 h-10 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </div>
-      <h2 class="text-2xl font-bold text-white mb-2">Agendamento Cancelado</h2>
-      <p class="text-zinc-400 text-sm mb-8">Sentimos muito! Será um prazer receber você outra hora. 🌸</p>
-      <button @click="$router.push('/agendar')" class="w-full font-semibold py-4 rounded-2xl mb-3 transition-all active:scale-95" style="background:#e8557a;color:#fff">
-        Reagendar
-      </button>
-      <button @click="$router.push('/')" class="w-full font-semibold py-4 rounded-2xl" style="background:#1a1a1a;color:#aaa;border:1px solid #2a2a2a">
-        Voltar ao início
-      </button>
-    </div>
+    <div class="relative z-10 w-full max-w-xs">
 
-    <!-- Confirmação de cancelamento -->
-    <div v-else-if="appt" class="w-full max-w-xs">
-      <div class="text-center mb-8">
-        <h2 class="text-xl font-bold text-white mb-1">Cancelar Agendamento</h2>
-        <p class="text-zinc-500 text-sm">Tem certeza? Esta ação não pode ser desfeita.</p>
-      </div>
+      <!-- Carregando -->
+      <div v-if="loading" class="text-center py-12 text-sm" style="color:#4a3a4a">Carregando...</div>
 
-      <div class="rounded-2xl p-5 mb-6" style="background:#161616;border:1px solid #2a2a2a">
-        <p class="text-xs text-zinc-500 uppercase tracking-widest mb-3">Seu agendamento</p>
-        <p class="text-base font-semibold text-white mb-2">{{ appt.service.name }}</p>
-        <p class="text-sm text-zinc-400 mb-1">📅 {{ fmtDate(appt.datetime) }}</p>
-        <p class="text-sm text-zinc-400 mb-1">⏰ {{ fmtTime(appt.datetime) }}</p>
-        <p class="text-sm text-zinc-400">👤 {{ appt.client.name }}</p>
-        <div class="mt-3 pt-3" style="border-top:1px solid #2a2a2a">
-          <span class="text-xs px-2 py-1 rounded-full" style="background:#14532d22;color:#4ade80;border:1px solid #4ade8033">
-            Agendado
-          </span>
+      <!-- Erro -->
+      <div v-else-if="error" class="text-center">
+        <div class="relative mb-6 inline-flex">
+          <div class="absolute inset-0 rounded-full blur-xl" style="background:rgba(232,85,122,0.15);transform:scale(1.4)"/>
+          <div class="relative w-16 h-16 rounded-full flex items-center justify-center"
+               style="background:linear-gradient(135deg,#1e0e18,#2a0e1a);border:1px solid rgba(232,85,122,0.3)">
+            <span class="text-xl">⚠️</span>
+          </div>
         </div>
+        <h2 class="text-lg font-bold mb-2" style="color:#f0ecf5">Ops!</h2>
+        <p class="text-sm mb-8" style="color:#6a5a7a;line-height:1.7">{{ error }}</p>
+        <button @click="$router.push('/')"
+                class="w-full font-semibold py-4 rounded-2xl text-sm tracking-wide transition-all active:scale-95"
+                style="background:linear-gradient(135deg,#e8557a,#c93d65);color:#fff;box-shadow:0 8px 32px rgba(232,85,122,0.25)">
+          Voltar ao início
+        </button>
       </div>
 
-      <button
-        @click="confirmCancel"
-        :disabled="cancelling"
-        class="w-full font-semibold py-4 rounded-2xl mb-3 transition-all active:scale-95"
-        style="background:#7f1d1d;color:#fca5a5;border:1px solid #ef444433"
-      >
-        {{ cancelling ? 'Cancelando...' : 'Confirmar Cancelamento' }}
-      </button>
+      <!-- Cancelado com sucesso -->
+      <div v-else-if="cancelled" class="text-center">
+        <div class="relative mb-6 inline-flex">
+          <div class="absolute inset-0 rounded-full blur-xl" style="background:rgba(201,168,112,0.12);transform:scale(1.4)"/>
+          <div class="relative w-20 h-20 rounded-full flex items-center justify-center"
+               style="background:linear-gradient(135deg,#14120e,#1a1810);border:1.5px solid rgba(201,168,112,0.25)">
+            <svg class="w-9 h-9" style="color:#c9a870" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold mb-2" style="color:#f0ecf5">Agendamento Cancelado</h2>
+        <p class="text-sm mb-8" style="color:#6a5a7a;line-height:1.8">
+          Sentimos muito! Será um prazer<br/>receber você outra hora. 🌸
+        </p>
+        <button @click="$router.push('/agendar')"
+                class="w-full font-semibold py-4 rounded-2xl mb-3 text-sm tracking-wide transition-all active:scale-95"
+                style="background:linear-gradient(135deg,#e8557a,#c93d65);color:#fff;box-shadow:0 8px 32px rgba(232,85,122,0.25)">
+          Reagendar
+        </button>
+        <button @click="$router.push('/')"
+                class="w-full font-semibold py-4 rounded-2xl text-sm transition-all"
+                style="background:rgba(255,255,255,0.03);color:#4a3a5a;border:1px solid rgba(255,255,255,0.06)">
+          Voltar ao início
+        </button>
+      </div>
 
-      <button @click="$router.push('/')" class="w-full font-semibold py-4 rounded-2xl" style="background:#1a1a1a;color:#aaa;border:1px solid #2a2a2a">
-        Manter agendamento
-      </button>
+      <!-- Confirmação de cancelamento -->
+      <div v-else-if="appt">
+        <div class="text-center mb-8">
+          <p class="text-xs tracking-widest uppercase mb-1" style="color:#c9a870;opacity:0.6;letter-spacing:0.2em">Cancelamento</p>
+          <h2 class="text-xl font-bold mb-1" style="color:#f0ecf5">Cancelar Agendamento</h2>
+          <p class="text-sm" style="color:#5a4a6a">Tem certeza? Esta ação não pode ser desfeita.</p>
+        </div>
+
+        <!-- Card do agendamento -->
+        <div class="rounded-2xl p-5 mb-6 relative overflow-hidden"
+             style="background:linear-gradient(135deg,#141220,#171525);border:1px solid rgba(255,255,255,0.07)">
+          <div class="absolute top-0 right-0 w-20 h-20 pointer-events-none"
+               style="background:radial-gradient(circle,rgba(201,168,112,0.05),transparent 70%)"/>
+          <p class="text-xs uppercase tracking-widest mb-3" style="color:#4a3a5a;letter-spacing:0.15em">Seu agendamento</p>
+          <p class="text-base font-semibold mb-3" style="color:#f0ecf5">{{ appt.service.name }}</p>
+          <div class="space-y-1.5">
+            <p class="text-sm" style="color:#6a5a7a">📅 {{ fmtDate(appt.datetime) }}</p>
+            <p class="text-sm" style="color:#6a5a7a">⏰ {{ fmtTime(appt.datetime) }}</p>
+            <p class="text-sm" style="color:#6a5a7a">👤 {{ appt.client.name }}</p>
+          </div>
+          <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,0.05)">
+            <span class="text-xs px-3 py-1 rounded-full font-medium"
+                  style="background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.15)">
+              Agendado
+            </span>
+          </div>
+        </div>
+
+        <button @click="confirmCancel" :disabled="cancelling"
+                class="w-full font-semibold py-4 rounded-2xl mb-3 text-sm tracking-wide transition-all active:scale-95"
+                style="background:rgba(127,29,29,0.6);color:#fca5a5;border:1px solid rgba(239,68,68,0.2)">
+          {{ cancelling ? 'Cancelando...' : 'Confirmar Cancelamento' }}
+        </button>
+
+        <button @click="$router.push('/')"
+                class="w-full font-semibold py-4 rounded-2xl text-sm transition-all"
+                style="background:rgba(255,255,255,0.03);color:#4a3a5a;border:1px solid rgba(255,255,255,0.06)">
+          Manter agendamento
+        </button>
+      </div>
+
     </div>
-
   </div>
 </template>
 
@@ -88,8 +127,8 @@ onMounted(async () => {
   try {
     const res  = await api.get(`/appointments/${route.params.id}/public`)
     const data = res.data
-    if (data.status === 'cancelled')       error.value = 'Este agendamento já foi cancelado.'
-    else if (data.status === 'completed')  error.value = 'Este agendamento já foi realizado.'
+    if (data.status === 'cancelled')      error.value = 'Este agendamento já foi cancelado.'
+    else if (data.status === 'completed') error.value = 'Este agendamento já foi realizado.'
     else if (new Date(data.datetime) < new Date()) error.value = 'Não é possível cancelar um agendamento passado.'
     else appt.value = data
   } catch {
@@ -117,7 +156,6 @@ function fmtDate(dt) {
     timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: '2-digit'
   })
 }
-
 function fmtTime(dt) {
   return new Date(dt).toLocaleTimeString('pt-BR', {
     timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
