@@ -1,53 +1,52 @@
 import { Router } from 'express'
+import Client from '../models/Client.js'
 import Appointment from '../models/Appointment.js'
 import { notifyOwnerOfResponse } from '../services/whatsapp.service.js'
 
 const router = Router()
 
-// Webhook: Evolution API envia aqui as respostas dos clientes
 router.post('/webhook', async (req, res) => {
+  res.sendStatus(200) // responde imediatamente ao Evolution API
+
   try {
     const { data } = req.body
-    if (!data?.message?.conversation && !data?.message?.extendedTextMessage) {
-      return res.sendStatus(200) // ignora outros tipos de mensagem
-    }
+    if (!data || data.key?.fromMe) return // ignora mensagens enviadas por nós
 
-    const text = (data.message.conversation || data.message.extendedTextMessage?.text || '').trim().toLowerCase()
+    const text = (
+      data.message?.conversation ||
+      data.message?.extendedTextMessage?.text || ''
+    ).trim().toLowerCase()
+
     const phone = data.key?.remoteJid?.replace('@s.whatsapp.net', '')
-    if (!phone) return res.sendStatus(200)
+    if (!phone || !text) return
 
-    // Identifica se é SIM (1/sim) ou NÃO (2/nao/não)
     const isYes = ['1', 'sim', 's', 'yes'].includes(text)
-    const isNo = ['2', 'nao', 'não', 'n', 'no'].includes(text)
-    if (!isYes && !isNo) return res.sendStatus(200)
+    const isNo  = ['2', 'nao', 'não', 'n', 'no'].includes(text)
+    if (!isYes && !isNo) return
 
-    // Busca agendamento pendente de resposta deste número
-    const now = new Date()
+    // Busca cliente pelo telefone
+    const client = await Client.findOne({ phone })
+    if (!client) return
+
+    // Busca o agendamento mais próximo deste cliente que aguarda resposta
     const appt = await Appointment.findOne({
+      client: client._id,
       status: 'confirmed',
-      datetime: { $gte: now },
+      datetime: { $gte: new Date() },
       'confirmation.reminderSent': true,
       'confirmation.response': null
-    }).populate('client').then(docs =>
-      // Garante que o telefone bate com o cliente
-      Array.isArray(docs)
-        ? docs.find(a => a.client.phone === phone)
-        : docs?.client?.phone === phone ? docs : null
-    )
+    }).sort({ datetime: 1 })
 
-    if (!appt) return res.sendStatus(200)
+    if (!appt) return
 
-    const response = isYes ? 'yes' : 'no'
-    appt.confirmation.response = response
+    appt.confirmation.response = isYes ? 'yes' : 'no'
     appt.confirmation.respondedAt = new Date()
     if (isNo) appt.status = 'cancelled'
     await appt.save()
 
-    await notifyOwnerOfResponse(appt._id, response).catch(console.error)
-    res.sendStatus(200)
+    await notifyOwnerOfResponse(appt._id, isYes ? 'yes' : 'no').catch(console.error)
   } catch (err) {
     console.error('[Webhook]', err.message)
-    res.sendStatus(200) // sempre 200 para o Evolution API não retentar
   }
 })
 

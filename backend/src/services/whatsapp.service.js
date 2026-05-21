@@ -22,7 +22,7 @@ async function send(phone, message) {
   const res = await fetch(`${BASE_URL}/message/sendText/${INSTANCE}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: API_KEY },
-    body: JSON.stringify({ number: phone, text: message })
+    body: JSON.stringify({ number: phone, textMessage: { text: message } })
   })
   if (!res.ok) throw new Error(`Evolution API erro: ${res.status}`)
 }
