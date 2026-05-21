@@ -13,6 +13,11 @@ const routes = [
     component: () => import('@/views/public/BookingView.vue')
   },
   {
+    path: '/cancelar/:id',
+    name: 'cancelar',
+    component: () => import('@/views/public/CancelView.vue')
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue')

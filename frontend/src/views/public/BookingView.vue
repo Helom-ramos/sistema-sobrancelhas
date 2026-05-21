@@ -174,26 +174,34 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
         </svg>
       </div>
-      <h2 class="text-2xl font-bold text-white text-center mb-2">Agendamento Confirmado!</h2>
+      <h2 class="text-2xl font-bold text-white text-center mb-2">Tudo certo! 🌸</h2>
       <p class="text-zinc-400 text-center text-sm mb-2">
-        {{ clientName }}, seu agendamento foi realizado com sucesso.
+        {{ clientName }}, seu horário está reservado.<br/>Mal podemos esperar para te receber!
       </p>
-      <div class="rounded-2xl p-4 w-full max-w-xs mt-4 mb-8"
+      <div class="rounded-2xl p-4 w-full max-w-xs mt-4 mb-4"
            style="background:#1a0a10;border:1px solid #e8557a40">
         <p class="text-sm font-semibold" style="color:#e8557a">{{ selectedService?.name }}</p>
         <p class="text-xs text-zinc-400 mt-1">{{ formatDate(selectedDate) }} às {{ selectedTime }}</p>
         <p class="text-xs text-zinc-400">R$ {{ selectedService?.price }}</p>
       </div>
-      <p class="text-xs text-zinc-600 text-center mb-8">
-        Você receberá uma confirmação no WhatsApp.<br/>
-        30 minutos antes enviaremos um lembrete.
+      <p class="text-xs text-zinc-500 text-center mb-8">
+        A confirmação chegará no seu WhatsApp em instantes.<br/>
+        Enviaremos um lembrete 30 minutos antes do seu horário.
       </p>
       <button
         @click="$router.push('/')"
-        class="w-full max-w-xs font-semibold py-4 rounded-2xl"
+        class="w-full max-w-xs font-semibold py-4 rounded-2xl mb-3"
         style="background:#e8557a;color:#fff"
       >
         Voltar ao início
+      </button>
+      <button
+        v-if="appointmentId"
+        @click="$router.push(`/cancelar/${appointmentId}`)"
+        class="w-full max-w-xs text-xs py-3 rounded-2xl"
+        style="background:transparent;color:#555;border:1px solid #2a2a2a"
+      >
+        Precisar cancelar? Clique aqui
       </button>
     </div>
 
@@ -229,6 +237,7 @@ const clientName = ref('')
 const clientPhone = ref('')
 const submitting = ref(false)
 const errorMsg = ref('')
+const appointmentId = ref('')
 
 const minDate = computed(() => {
   const d = new Date()
@@ -293,13 +302,14 @@ async function submitBooking() {
   if (!canSubmit.value || submitting.value) return
   submitting.value = true
   try {
-    await api.post('/appointments', {
+    const res = await api.post('/appointments', {
       name: clientName.value.trim(),
       phone: clientPhone.value.replace(/\D/g, ''),
       serviceId: selectedService.value._id,
       date: selectedDate.value,
       time: selectedTime.value
     })
+    appointmentId.value = res.data.id
     step.value = 4
   } catch (err) {
     showError(err.response?.data?.error || 'Erro ao agendar. Tente novamente.')

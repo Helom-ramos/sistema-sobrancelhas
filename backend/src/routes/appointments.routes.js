@@ -3,7 +3,7 @@ import Appointment from '../models/Appointment.js'
 import Client from '../models/Client.js'
 import Service from '../models/Service.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
-import { sendBookingConfirmation } from '../services/whatsapp.service.js'
+import { sendBookingConfirmation, sendCancellationNotification } from '../services/whatsapp.service.js'
 
 const router = Router()
 
@@ -61,6 +61,39 @@ router.get('/', requireAuth, async (req, res, next) => {
       .populate('service')
       .sort({ datetime: 1 })
     res.json(appointments)
+  } catch (err) { next(err) }
+})
+
+// Público: cancelar agendamento via link
+router.post('/:id/cancel', async (req, res, next) => {
+  try {
+    const appt = await Appointment.findById(req.params.id).populate('client service')
+    if (!appt) return res.status(404).json({ error: 'Agendamento não encontrado' })
+    if (appt.status === 'cancelled') return res.status(400).json({ error: 'Agendamento já cancelado' })
+    if (appt.status === 'completed') return res.status(400).json({ error: 'Agendamento já realizado' })
+    if (new Date(appt.datetime) < new Date()) return res.status(400).json({ error: 'Não é possível cancelar um agendamento passado' })
+
+    appt.status = 'cancelled'
+    await appt.save()
+
+    sendCancellationNotification(appt._id).catch(console.error)
+
+    res.json({ message: 'Agendamento cancelado com sucesso' })
+  } catch (err) { next(err) }
+})
+
+// Público: buscar agendamento por ID (para página de cancelamento)
+router.get('/:id/public', async (req, res, next) => {
+  try {
+    const appt = await Appointment.findById(req.params.id).populate('client service')
+    if (!appt) return res.status(404).json({ error: 'Agendamento não encontrado' })
+    res.json({
+      _id: appt._id,
+      status: appt.status,
+      datetime: appt.datetime,
+      service: { name: appt.service.name, price: appt.service.price, duration: appt.service.duration },
+      client: { name: appt.client.name }
+    })
   } catch (err) { next(err) }
 })
 

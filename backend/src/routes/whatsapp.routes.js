@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import Client from '../models/Client.js'
 import Appointment from '../models/Appointment.js'
-import { notifyOwnerOfResponse } from '../services/whatsapp.service.js'
+import { notifyOwnerOfResponse, sendCancellationNotification } from '../services/whatsapp.service.js'
 
 const router = Router()
 
@@ -17,7 +17,9 @@ router.post('/webhook', async (req, res) => {
       data.message?.extendedTextMessage?.text || ''
     ).trim().toLowerCase()
 
-    const phone = data.key?.remoteJid?.replace('@s.whatsapp.net', '')
+    const rawPhone = data.key?.remoteJid?.replace('@s.whatsapp.net', '') || ''
+    // normaliza: remove o 55 do Brasil para bater com o banco (que salva sem DDI)
+    const phone = rawPhone.startsWith('55') && rawPhone.length > 11 ? rawPhone.slice(2) : rawPhone
     if (!phone || !text) return
 
     const isYes = ['1', 'sim', 's', 'yes'].includes(text)
@@ -45,6 +47,7 @@ router.post('/webhook', async (req, res) => {
     await appt.save()
 
     await notifyOwnerOfResponse(appt._id, isYes ? 'yes' : 'no').catch(console.error)
+    if (isNo) await sendCancellationNotification(appt._id).catch(console.error)
   } catch (err) {
     console.error('[Webhook]', err.message)
   }
