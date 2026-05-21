@@ -13,25 +13,29 @@ export async function getAvailableSlots(req, res, next) {
     ])
     if (!service) return res.status(404).json({ error: 'Serviço não encontrado' })
 
-    // Dia da semana no fuso de Brasília
     const targetDate = new Date(`${date}T00:00:00-03:00`)
     const dayOfWeek = targetDate.getDay()
     const dayConfig = settings.workingHours.find(h => h.day === dayOfWeek)
 
     if (!dayConfig?.active) return res.json([])
 
-    // Gera todos os slots do dia
-    const [startH, startM] = dayConfig.start.split(':').map(Number)
-    const [endH, endM] = dayConfig.end.split(':').map(Number)
-    const startMinutes = startH * 60 + startM
-    const endMinutes = endH * 60 + endM
-    const slotInterval = service.duration + settings.breakBetweenAppointments
+    const toMinutes = (str) => { const [h, m] = str.split(':').map(Number); return h * 60 + m }
 
+    // Monta turnos: sempre tem o 1º turno; 2º turno é opcional
+    const shifts = [{ start: toMinutes(dayConfig.start), end: toMinutes(dayConfig.end) }]
+    if (dayConfig.start2 && dayConfig.end2) {
+      shifts.push({ start: toMinutes(dayConfig.start2), end: toMinutes(dayConfig.end2) })
+    }
+
+    // Gera slots para cada turno
+    const slotInterval = service.duration + settings.breakBetweenAppointments
     const slots = []
-    for (let m = startMinutes; m + service.duration <= endMinutes; m += slotInterval) {
-      const h = Math.floor(m / 60).toString().padStart(2, '0')
-      const min = (m % 60).toString().padStart(2, '0')
-      slots.push(`${h}:${min}`)
+    for (const shift of shifts) {
+      for (let m = shift.start; m + service.duration <= shift.end; m += slotInterval) {
+        const h = Math.floor(m / 60).toString().padStart(2, '0')
+        const min = (m % 60).toString().padStart(2, '0')
+        slots.push(`${h}:${min}`)
+      }
     }
 
     // Busca agendamentos existentes no dia

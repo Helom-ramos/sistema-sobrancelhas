@@ -4,6 +4,8 @@ const workingHourSchema = new mongoose.Schema({
   day: { type: Number, min: 0, max: 6 }, // 0=Dom, 1=Seg ... 6=Sáb
   start: { type: String, default: '09:00' },
   end: { type: String, default: '18:00' },
+  start2: { type: String, default: '' },  // segundo turno (ex: 15:00)
+  end2: { type: String, default: '' },    // fim do segundo turno (ex: 19:00)
   active: { type: Boolean, default: true }
 }, { _id: false })
 
