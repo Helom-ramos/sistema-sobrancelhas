@@ -1,92 +1,68 @@
 <template>
   <AdminLayout>
     <div class="space-y-6">
-      <h1 class="text-2xl font-bold text-gray-900">Configurações</h1>
+      <h1 class="text-2xl font-bold text-white">Configurações</h1>
+      <div v-if="loading" class="text-center text-zinc-500 py-8">Carregando...</div>
 
-      <div v-if="loading" class="text-center text-gray-400 py-8">Carregando...</div>
-
-      <form v-else @submit.prevent="save" class="space-y-6">
-        <!-- Dados do salão -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-          <h2 class="font-semibold text-gray-900">Dados do Salão</h2>
+      <form v-else @submit.prevent="save" class="space-y-5">
+        <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
+          <h2 class="font-semibold text-white">Dados do Salão</h2>
           <div>
-            <label class="label">Nome do Salão</label>
-            <input v-model="form.salonName" type="text" class="input" />
+            <label class="lbl">Nome do Salão</label>
+            <input v-model="form.salonName" type="text" class="inp" />
           </div>
           <div>
-            <label class="label">Telefone/WhatsApp da Proprietária</label>
-            <input v-model="form.phone" type="tel" placeholder="5511999999999" class="input" />
-            <p class="text-xs text-gray-400 mt-1">Formato: código do país + DDD + número (sem espaços)</p>
+            <label class="lbl">WhatsApp da Proprietária</label>
+            <input v-model="form.phone" type="tel" placeholder="5538999999999" class="inp" />
+            <p class="text-xs text-zinc-600 mt-1">Código do país + DDD + número</p>
           </div>
           <div>
-            <label class="label">Endereço</label>
-            <input v-model="form.address" type="text" class="input" />
+            <label class="lbl">Endereço</label>
+            <input v-model="form.address" type="text" class="inp" />
           </div>
-        </div>
+        </section>
 
-        <!-- Horários de funcionamento -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-          <h2 class="font-semibold text-gray-900">Horário de Funcionamento</h2>
-          <div
-            v-for="(h, idx) in form.workingHours"
-            :key="h.day"
-            class="flex items-center gap-3"
-          >
-            <div class="w-8 text-center">
-              <input type="checkbox" v-model="h.active" class="rounded" />
-            </div>
-            <span class="w-20 text-sm text-gray-700 font-medium">{{ dayNames[h.day] }}</span>
-            <input
-              v-model="h.start"
-              type="time"
-              :disabled="!h.active"
-              class="input w-28 disabled:bg-gray-50 disabled:text-gray-400"
-            />
-            <span class="text-gray-400 text-sm">até</span>
-            <input
-              v-model="h.end"
-              type="time"
-              :disabled="!h.active"
-              class="input w-28 disabled:bg-gray-50 disabled:text-gray-400"
-            />
+        <section class="rounded-2xl p-5 space-y-3" style="background:#1a1a1a;border:1px solid #2a2a2a">
+          <h2 class="font-semibold text-white">Horário de Funcionamento</h2>
+          <div v-for="h in form.workingHours" :key="h.day" class="flex items-center gap-3">
+            <input type="checkbox" v-model="h.active" class="rounded" />
+            <span class="w-10 text-sm text-zinc-300 font-medium">{{ dayNames[h.day] }}</span>
+            <input v-model="h.start" type="time" :disabled="!h.active" class="inp w-28" style="padding:0.5rem 0.75rem" />
+            <span class="text-zinc-600 text-sm">até</span>
+            <input v-model="h.end" type="time" :disabled="!h.active" class="inp w-28" style="padding:0.5rem 0.75rem" />
           </div>
-        </div>
+        </section>
 
-        <!-- Parâmetros de agendamento -->
-        <div class="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-          <h2 class="font-semibold text-gray-900">Parâmetros</h2>
+        <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
+          <h2 class="font-semibold text-white">Parâmetros</h2>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="label">Intervalo entre atendimentos (min)</label>
-              <input v-model.number="form.breakBetweenAppointments" type="number" min="0" class="input" />
+              <label class="lbl">Intervalo entre atend. (min)</label>
+              <input v-model.number="form.breakBetweenAppointments" type="number" min="0" class="inp" />
             </div>
             <div>
-              <label class="label">Dias de antecedência para agendamento</label>
-              <input v-model.number="form.advanceBookingDays" type="number" min="1" class="input" />
+              <label class="lbl">Dias de antecedência</label>
+              <input v-model.number="form.advanceBookingDays" type="number" min="1" class="inp" />
             </div>
             <div>
-              <label class="label">Lembrete WhatsApp (min antes)</label>
-              <input v-model.number="form.reminderMinutesBefore" type="number" min="1" class="input" />
+              <label class="lbl">Lembrete WhatsApp (min antes)</label>
+              <input v-model.number="form.reminderMinutesBefore" type="number" min="1" class="inp" />
             </div>
             <div>
-              <label class="label">Alerta sem resposta (min)</label>
-              <input v-model.number="form.noResponseAlertMinutes" type="number" min="1" class="input" />
+              <label class="lbl">Alerta sem resposta (min)</label>
+              <input v-model.number="form.noResponseAlertMinutes" type="number" min="1" class="inp" />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div v-if="successMsg" class="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
-          {{ successMsg }}
-        </div>
-        <div v-if="errorMsg" class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
-          {{ errorMsg }}
-        </div>
+        <div v-if="successMsg" class="rounded-xl px-4 py-3 text-sm"
+             style="background:#052e16;border:1px solid #16a34a60;color:#86efac">{{ successMsg }}</div>
+        <div v-if="errorMsg" class="rounded-xl px-4 py-3 text-sm"
+             style="background:#1a0a10;border:1px solid #e8557a60;color:#f9a8d4">{{ errorMsg }}</div>
 
-        <button
-          type="submit"
-          :disabled="saving"
-          class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-50"
-        >
+        <button type="submit" :disabled="saving"
+          class="w-full font-semibold py-3.5 rounded-xl transition-colors"
+          :style="saving ? 'background:#2a2a2a;color:#555' : 'background:#e8557a;color:#fff'">
           {{ saving ? 'Salvando...' : 'Salvar Configurações' }}
         </button>
       </form>
@@ -99,30 +75,15 @@ import { ref, onMounted } from 'vue'
 import AdminLayout from '@/components/AdminLayout.vue'
 import api from '@/services/api.js'
 
-const loading = ref(true)
-const saving = ref(false)
-const successMsg = ref('')
-const errorMsg = ref('')
-
+const loading = ref(true), saving = ref(false)
+const successMsg = ref(''), errorMsg = ref('')
 const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
-const defaultWorkingHours = () =>
-  [0,1,2,3,4,5,6].map(day => ({
-    day,
-    active: day >= 1 && day <= 5,
-    start: '09:00',
-    end: '18:00'
-  }))
-
 const form = ref({
-  salonName: '',
-  phone: '',
-  address: '',
-  workingHours: defaultWorkingHours(),
-  breakBetweenAppointments: 10,
-  advanceBookingDays: 30,
-  reminderMinutesBefore: 30,
-  noResponseAlertMinutes: 15
+  salonName: '', phone: '', address: '',
+  workingHours: [0,1,2,3,4,5,6].map(day => ({ day, active: day >= 1 && day <= 5, start: '09:00', end: '18:00' })),
+  breakBetweenAppointments: 10, advanceBookingDays: 30,
+  reminderMinutesBefore: 30, noResponseAlertMinutes: 15
 })
 
 onMounted(async () => {
@@ -130,39 +91,40 @@ onMounted(async () => {
     const res = await api.get('/settings')
     if (res.data) {
       const s = res.data
-      form.value.salonName = s.salonName || ''
-      form.value.phone = s.phone || ''
-      form.value.address = s.address || ''
-      form.value.breakBetweenAppointments = s.breakBetweenAppointments ?? 10
-      form.value.advanceBookingDays = s.advanceBookingDays ?? 30
-      form.value.reminderMinutesBefore = s.reminderMinutesBefore ?? 30
-      form.value.noResponseAlertMinutes = s.noResponseAlertMinutes ?? 15
+      Object.assign(form.value, {
+        salonName: s.salonName || '', phone: s.phone || '', address: s.address || '',
+        breakBetweenAppointments: s.breakBetweenAppointments ?? 10,
+        advanceBookingDays: s.advanceBookingDays ?? 30,
+        reminderMinutesBefore: s.reminderMinutesBefore ?? 30,
+        noResponseAlertMinutes: s.noResponseAlertMinutes ?? 15,
+      })
       if (s.workingHours?.length) form.value.workingHours = s.workingHours
     }
-  } catch {
-    errorMsg.value = 'Erro ao carregar configurações.'
-  } finally {
-    loading.value = false
-  }
+  } catch { errorMsg.value = 'Erro ao carregar.' } finally { loading.value = false }
 })
 
 async function save() {
-  saving.value = true
-  successMsg.value = ''
-  errorMsg.value = ''
+  saving.value = true; successMsg.value = ''; errorMsg.value = ''
   try {
     await api.put('/settings', form.value)
-    successMsg.value = 'Configurações salvas com sucesso!'
+    successMsg.value = 'Configurações salvas!'
     setTimeout(() => { successMsg.value = '' }, 3000)
-  } catch {
-    errorMsg.value = 'Erro ao salvar. Tente novamente.'
-  } finally {
-    saving.value = false
-  }
+  } catch { errorMsg.value = 'Erro ao salvar.' } finally { saving.value = false }
 }
 </script>
 
 <style scoped>
-.label { @apply block text-sm font-medium text-gray-700 mb-1; }
-.input { @apply w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100; }
+.lbl { @apply block text-sm font-medium text-zinc-400 mb-1; }
+.inp {
+  width: 100%;
+  background: #0d0d0d;
+  border: 1px solid #2a2a2a;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: white;
+  outline: none;
+}
+.inp:disabled { opacity: 0.4; }
+.inp:focus { border-color: #e8557a; }
 </style>

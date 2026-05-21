@@ -1,14 +1,14 @@
 <template>
-  <div class="border border-gray-100 rounded-xl p-4">
+  <div class="rounded-xl p-4" style="border:1px solid #2a2a2a;background:#1a1a1a">
     <div class="flex items-start justify-between gap-2">
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <p class="font-semibold text-gray-900 text-sm truncate">{{ appointment.client?.name }}</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-semibold text-white text-sm truncate">{{ appointment.client?.name }}</p>
           <span :class="statusClass">{{ statusLabel }}</span>
         </div>
-        <p class="text-xs text-gray-500 mt-0.5">{{ appointment.service?.name }}</p>
-        <p class="text-xs text-gray-400 mt-0.5">{{ formatTime(appointment.datetime) }}</p>
-        <p v-if="appointment.client?.phone" class="text-xs text-gray-400">
+        <p class="text-xs text-zinc-400 mt-0.5">{{ appointment.service?.name }}</p>
+        <p class="text-xs text-zinc-500 mt-0.5">{{ formatTime(appointment.datetime) }}</p>
+        <p v-if="appointment.client?.phone" class="text-xs text-zinc-500">
           📱 {{ formatPhone(appointment.client.phone) }}
         </p>
       </div>
@@ -16,7 +16,8 @@
         <select
           :value="appointment.status"
           @change="changeStatus($event.target.value)"
-          class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-brand-400"
+          class="text-xs rounded-lg px-2 py-1.5 focus:outline-none border text-white"
+          style="background:#0d0d0d;border-color:#2a2a2a"
         >
           <option value="pending">Pendente</option>
           <option value="confirmed">Confirmado</option>
@@ -37,16 +38,16 @@ const props = defineProps({ appointment: Object })
 const emit = defineEmits(['status-change'])
 
 const statusMap = {
-  pending:   { label: 'Pendente',   cls: 'bg-yellow-100 text-yellow-700' },
-  confirmed: { label: 'Confirmado', cls: 'bg-green-100 text-green-700' },
-  cancelled: { label: 'Cancelado',  cls: 'bg-red-100 text-red-600' },
-  completed: { label: 'Concluído',  cls: 'bg-blue-100 text-blue-700' },
-  no_show:   { label: 'Faltou',     cls: 'bg-gray-100 text-gray-500' }
+  pending:   { label: 'Pendente',   cls: 'bg-yellow-900 text-yellow-300' },
+  confirmed: { label: 'Confirmado', cls: 'bg-green-900 text-green-300' },
+  cancelled: { label: 'Cancelado',  cls: 'bg-red-900 text-red-300' },
+  completed: { label: 'Concluído',  cls: 'bg-blue-900 text-blue-300' },
+  no_show:   { label: 'Faltou',     cls: 'bg-zinc-800 text-zinc-400' }
 }
 
 const statusLabel = computed(() => statusMap[props.appointment.status]?.label || props.appointment.status)
 const statusClass = computed(() =>
-  `text-xs px-2 py-0.5 rounded-full font-medium ${statusMap[props.appointment.status]?.cls || 'bg-gray-100'}`
+  `text-xs px-2 py-0.5 rounded-full font-medium ${statusMap[props.appointment.status]?.cls || 'bg-zinc-800 text-zinc-400'}`
 )
 
 function formatTime(dt) {
@@ -59,7 +60,6 @@ function formatTime(dt) {
 }
 
 function formatPhone(p) {
-  if (!p) return ''
   const d = p.replace(/\D/g, '')
   return d.length === 11 ? `(${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}` : p
 }
@@ -68,8 +68,6 @@ async function changeStatus(status) {
   try {
     await api.patch(`/appointments/${props.appointment._id}/status`, { status })
     emit('status-change')
-  } catch {
-    // revert handled by parent reload
-  }
+  } catch { /* silencioso */ }
 }
 </script>

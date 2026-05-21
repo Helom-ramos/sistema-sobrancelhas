@@ -1,75 +1,88 @@
 <template>
-  <div class="min-h-screen bg-brand-50 flex flex-col">
-    <!-- Header -->
-    <header class="bg-white shadow-sm px-4 py-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-bold text-brand-800">Studio de Sobrancelhas</h1>
-        <p class="text-xs text-gray-500">Beleza que realça o seu olhar</p>
-      </div>
-      <button
-        @click="$router.push('/login')"
-        class="text-xs text-gray-400 hover:text-brand-600 transition-colors"
-      >
+  <div class="min-h-screen flex flex-col" style="background:#0d0d0d">
+
+    <!-- Header simples -->
+    <header class="px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid #1a1a1a">
+      <p class="text-xs font-semibold text-zinc-400 tracking-widest uppercase">Déborah Cristhiany</p>
+      <button @click="$router.push('/login')" class="text-xs text-zinc-600 hover:text-pink-400 transition-colors">
         Admin
       </button>
     </header>
 
-    <!-- Hero -->
-    <main class="flex-1 flex flex-col items-center px-4 pt-10 pb-8">
-      <div class="w-24 h-24 rounded-full bg-brand-200 flex items-center justify-center mb-6 shadow-md">
-        <span class="text-5xl">✨</span>
-      </div>
+    <!-- Banner: fundo preto, filter:invert(1) → letras brancas -->
+    <div style="background:#000000; padding:24px 20px 16px; display:flex; justify-content:center">
+      <img
+        src="/banner.png"
+        alt="Déborah Cristhiany Designer de Sobrancelhas"
+        style="display:block; width:100%; max-width:380px; height:auto; filter:invert(1)"
+      />
+    </div>
 
-      <h2 class="text-2xl font-bold text-gray-900 text-center leading-tight mb-2">
-        Sobrancelhas perfeitas<br />para você
-      </h2>
-      <p class="text-gray-500 text-center text-sm mb-8 max-w-xs">
-        Agende seu horário em poucos cliques, sem precisar criar conta.
+    <!-- Linha rosa divisória -->
+    <div style="height:1px; background:linear-gradient(to right,#0d0d0d,#e8557a,#0d0d0d)"></div>
+
+    <!-- CTA e conteúdo -->
+    <main class="flex-1 flex flex-col items-center px-5 pt-8 pb-10">
+
+      <p class="text-zinc-500 text-center text-sm mb-7 max-w-xs">
+        Agende seu horário em poucos cliques,<br/>sem precisar criar conta.
       </p>
 
       <button
         @click="$router.push('/agendar')"
-        class="w-full max-w-xs bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white font-semibold py-4 rounded-2xl text-lg shadow-lg transition-colors"
+        class="w-full max-w-xs font-semibold py-4 rounded-2xl text-base transition-all active:scale-95 mb-10"
+        style="background:linear-gradient(135deg,#e8557a,#c93d65);color:#fff"
       >
         Agendar Agora
       </button>
 
-      <!-- Serviços -->
-      <section class="w-full max-w-xs mt-12">
-        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Nossos Serviços</h3>
-        <div v-if="loading" class="text-center text-gray-400 py-8">Carregando...</div>
-        <div v-else class="space-y-3">
-          <div
-            v-for="s in services"
-            :key="s._id"
-            class="bg-white rounded-xl p-4 flex items-center gap-4 shadow-sm"
-          >
-            <div class="w-12 h-12 rounded-xl bg-brand-100 flex items-center justify-center shrink-0 overflow-hidden">
-              <img v-if="s.image" :src="s.image" :alt="s.name" class="w-full h-full object-cover" />
-              <span v-else class="text-2xl">💆</span>
+      <!-- Seção de serviços -->
+      <p class="text-xs text-zinc-600 tracking-widest uppercase font-medium self-start mb-4 w-full max-w-xs">
+        Nossos Serviços
+      </p>
+
+      <div v-if="loading" class="text-zinc-600 text-sm py-4">Carregando...</div>
+      <div v-else class="w-full max-w-xs space-y-3">
+        <div
+          v-for="s in services"
+          :key="s._id"
+          class="rounded-2xl overflow-hidden flex items-center"
+          style="background:#161616; border:1px solid #222"
+        >
+          <div class="w-20 h-20 shrink-0 overflow-hidden" style="background:#1f1f1f">
+            <img
+              v-if="s.image"
+              :src="s.image"
+              :alt="s.name"
+              class="w-full h-full object-cover"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center">
+              <span class="text-2xl opacity-30">💆</span>
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-semibold text-gray-900 text-sm truncate">{{ s.name }}</p>
-              <p class="text-xs text-gray-500">{{ s.duration }} min</p>
-            </div>
-            <p class="text-brand-600 font-bold text-sm shrink-0">R$ {{ s.price }}</p>
+          </div>
+          <div class="flex-1 px-4 py-3">
+            <p class="font-semibold text-white text-sm">{{ s.name }}</p>
+            <p class="text-xs text-zinc-500 mt-0.5">{{ s.duration }} min</p>
+          </div>
+          <div class="pr-4 shrink-0">
+            <p class="text-sm font-bold" style="color:#e8557a">R$ {{ s.price }}</p>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- Info -->
-      <section class="w-full max-w-xs mt-8">
-        <div v-if="settings" class="bg-white rounded-xl p-4 shadow-sm space-y-2">
-          <p class="text-sm font-semibold text-gray-700">{{ settings.salonName }}</p>
-          <p v-if="settings.address" class="text-xs text-gray-500">📍 {{ settings.address }}</p>
-          <p v-if="settings.phone" class="text-xs text-gray-500">📞 {{ settings.phone }}</p>
-        </div>
-      </section>
+      <!-- Info salão -->
+      <div
+        v-if="settings && (settings.address || settings.phone)"
+        class="w-full max-w-xs mt-5 rounded-2xl p-4 space-y-1.5"
+        style="background:#161616; border:1px solid #222"
+      >
+        <p v-if="settings.address" class="text-xs text-zinc-500">📍 {{ settings.address }}</p>
+        <p v-if="settings.phone" class="text-xs text-zinc-500">📞 {{ settings.phone }}</p>
+      </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center text-xs text-gray-400 py-4">
-      Agendamento online · Studio de Sobrancelhas
+    <footer class="text-center text-xs py-4" style="color:#2a2a2a; border-top:1px solid #1a1a1a">
+      © Déborah Cristhiany · Designer de Sobrancelhas
     </footer>
   </div>
 </template>
@@ -90,10 +103,7 @@ onMounted(async () => {
     ])
     services.value = svcRes.data
     settings.value = setRes.data
-  } catch {
-    // silencioso — mostrar página mesmo sem dados
-  } finally {
-    loading.value = false
-  }
+  } catch { /* silencioso */ }
+  finally { loading.value = false }
 })
 </script>

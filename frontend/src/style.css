@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
-/* Variáveis do design system */
 @theme {
-  --color-brand-50: #fdf8f0;
-  --color-brand-100: #faecd4;
-  --color-brand-200: #f4d9a8;
-  --color-brand-300: #edc073;
-  --color-brand-400: #e4a444;
-  --color-brand-500: #d98c24;
-  --color-brand-600: #c07019;
-  --color-brand-700: #9f5417;
-  --color-brand-800: #82421a;
-  --color-brand-900: #6b3618;
+  --color-brand-50: #1a0a10;
+  --color-brand-100: #2d1020;
+  --color-brand-200: #4a1a30;
+  --color-brand-300: #8b3a5a;
+  --color-brand-400: #c9607a;
+  --color-brand-500: #e8557a;
+  --color-brand-600: #d43d65;
+  --color-brand-700: #b82d52;
+  --color-brand-800: #0f0f0f;
+  --color-brand-900: #080808;
+
+  --color-surface: #161616;
+  --color-surface-2: #1f1f1f;
+  --color-surface-3: #2a2a2a;
 
   --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -21,5 +24,11 @@
 }
 
 body {
-  @apply bg-white text-gray-900 font-sans antialiased;
+  background-color: #0d0d0d;
+  @apply text-white font-sans antialiased;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
 }
