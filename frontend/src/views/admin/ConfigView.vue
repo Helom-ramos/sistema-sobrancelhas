@@ -114,7 +114,7 @@ async function save() {
 </script>
 
 <style scoped>
-.lbl { @apply block text-sm font-medium text-zinc-400 mb-1; }
+.lbl { display: block; font-size: 0.875rem; font-weight: 500; color: #a1a1aa; margin-bottom: 0.25rem; }
 .inp {
   width: 100%;
   background: #0d0d0d;
