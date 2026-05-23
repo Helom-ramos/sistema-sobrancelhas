@@ -19,7 +19,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 
 app.use(helmet())
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }))
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? true
+    : (process.env.FRONTEND_URL || 'http://localhost:5173')
+}))
 app.use(morgan('dev'))
 app.use(express.json())
 
@@ -35,6 +39,13 @@ app.use('/api/slots', slotsRoutes)
 app.use('/api/whatsapp', whatsappRoutes)
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
+
+// Serve frontend em produção
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../../frontend/dist')
+  app.use(express.static(distPath))
+  app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html')))
+}
 
 app.use((err, _req, res, _next) => {
   console.error(err.stack)

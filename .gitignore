@@ -25,3 +25,6 @@ desktop.ini
 # Logs
 *.log
 npm-debug.log*
+
+# Credenciais sensíveis (NUNCA commitar)
+atlas-credentials.txt
