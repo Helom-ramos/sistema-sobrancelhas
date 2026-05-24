@@ -40,13 +40,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/AdminLayout.vue'
 import AppointmentCard from '@/components/AppointmentCard.vue'
 import api from '@/services/api.js'
 
 const appointments = ref([])
 const loading = ref(true)
+let refreshTimer = null
 
 const today = computed(() =>
   new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -58,14 +59,30 @@ const stats = computed(() => ({
   cancelled: appointments.value.filter(a => a.status === 'cancelled').length
 }))
 
+function todayBrazil() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-')
+}
+
 async function reload() {
   loading.value = true
   try {
-    const date = new Date().toISOString().split('T')[0]
-    const res = await api.get('/appointments', { params: { date } })
+    const res = await api.get('/appointments', { params: { date: todayBrazil() } })
     appointments.value = res.data
   } catch { /* silencioso */ } finally { loading.value = false }
 }
 
-onMounted(reload)
+async function silentReload() {
+  try {
+    const res = await api.get('/appointments', { params: { date: todayBrazil() } })
+    appointments.value = res.data
+  } catch { /* silencioso */ }
+}
+
+onMounted(() => {
+  reload()
+  refreshTimer = setInterval(silentReload, 30000)
+})
+
+onUnmounted(() => clearInterval(refreshTimer))
 </script>

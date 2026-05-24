@@ -44,15 +44,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import AdminLayout from '@/components/AdminLayout.vue'
 import AppointmentCard from '@/components/AppointmentCard.vue'
 import api from '@/services/api.js'
 
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+function todayBrazil() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-')
+}
+
+const selectedDate = ref(todayBrazil())
 const appointments = ref([])
 const loading = ref(true)
 const activeFilter = ref('all')
+let refreshTimer = null
 
 const filters = [
   { value: 'all', label: 'Todos' },
@@ -84,5 +90,17 @@ async function load() {
   } catch { appointments.value = [] } finally { loading.value = false }
 }
 
-onMounted(load)
+async function silentReload() {
+  try {
+    const res = await api.get('/appointments', { params: { date: selectedDate.value } })
+    appointments.value = res.data
+  } catch { /* silencioso */ }
+}
+
+onMounted(() => {
+  load()
+  refreshTimer = setInterval(silentReload, 30000)
+})
+
+onUnmounted(() => clearInterval(refreshTimer))
 </script>
