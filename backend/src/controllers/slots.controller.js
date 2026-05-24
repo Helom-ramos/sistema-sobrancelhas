@@ -46,11 +46,9 @@ export async function getAvailableSlots(req, res, next) {
       status: { $nin: ['cancelled'] }
     }).populate('service')
 
-    // Remove slots com conflito
+    // Remove slots com conflito — usa offset BRT fixo para bater com o UTC armazenado
     const available = slots.filter(slot => {
-      const [h, m] = slot.split(':').map(Number)
-      const slotStart = new Date(dayStart)
-      slotStart.setHours(h, m, 0, 0)
+      const slotStart = new Date(`${date}T${slot}:00-03:00`)
       const slotEnd = new Date(slotStart.getTime() + service.duration * 60000)
 
       return !existing.some(appt => {
