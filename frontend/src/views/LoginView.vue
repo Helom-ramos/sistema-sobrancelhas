@@ -41,6 +41,19 @@
           />
         </div>
 
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <div class="relative shrink-0">
+            <input type="checkbox" v-model="rememberMe" class="sr-only" />
+            <div class="w-5 h-5 rounded-md border flex items-center justify-center transition-colors"
+                 :style="rememberMe ? 'background:#e8557a;border-color:#e8557a' : 'background:#0d0d0d;border-color:#3a3a3a'">
+              <svg v-if="rememberMe" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <span class="text-sm text-zinc-400">Lembrar acesso</span>
+        </label>
+
         <div v-if="errorMsg" class="text-sm rounded-xl px-4 py-3"
              style="background:#1a0a10;border:1px solid #e8557a60;color:#f9a8d4">
           {{ errorMsg }}
@@ -73,8 +86,10 @@ import { useAuthStore } from '@/stores/auth.js'
 const router = useRouter()
 const auth = useAuthStore()
 
-const email = ref('')
+const savedEmail = localStorage.getItem('savedEmail') || ''
+const email = ref(savedEmail)
 const password = ref('')
+const rememberMe = ref(!!savedEmail)
 const loading = ref(false)
 const errorMsg = ref('')
 
@@ -82,7 +97,7 @@ async function doLogin() {
   loading.value = true
   errorMsg.value = ''
   try {
-    await auth.login(email.value, password.value)
+    await auth.login(email.value, password.value, rememberMe.value)
     router.push('/admin/dashboard')
   } catch {
     errorMsg.value = 'E-mail ou senha incorretos.'
