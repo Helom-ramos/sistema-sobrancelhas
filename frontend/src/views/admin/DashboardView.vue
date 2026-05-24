@@ -1,15 +1,37 @@
 <template>
   <AdminLayout>
     <div class="space-y-6">
+      <!-- Cabeçalho + navegação de data -->
       <div>
         <h1 class="text-2xl font-bold text-white">Dashboard</h1>
-        <p class="text-sm text-zinc-500 mt-1">{{ today }}</p>
+        <div class="flex flex-wrap items-center gap-2 mt-3">
+          <button @click="changeDay(-1)"
+            class="flex items-center justify-center w-9 h-9 rounded-xl text-zinc-400 hover:text-white transition"
+            style="background:#1a1a1a;border:1px solid #2a2a2a">
+            ‹
+          </button>
+          <input type="date" v-model="selectedDate" @change="reload"
+            class="h-9 px-3 rounded-xl text-sm text-white bg-transparent outline-none"
+            style="background:#1a1a1a;border:1px solid #2a2a2a;color-scheme:dark" />
+          <button @click="changeDay(1)"
+            class="flex items-center justify-center w-9 h-9 rounded-xl text-zinc-400 hover:text-white transition"
+            style="background:#1a1a1a;border:1px solid #2a2a2a">
+            ›
+          </button>
+          <button v-if="selectedDate !== todayStr" @click="goToday"
+            class="h-9 px-4 rounded-xl text-xs font-medium text-white transition"
+            style="background:#6d28d9">
+            Hoje
+          </button>
+          <span class="text-sm text-zinc-400 ml-1">{{ dateLabel }}</span>
+        </div>
       </div>
 
+      <!-- Cards de estatísticas -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="rounded-2xl p-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
-          <p class="text-xs text-zinc-500 font-medium">Hoje</p>
-          <p class="text-3xl font-bold text-white mt-1">{{ stats.today }}</p>
+          <p class="text-xs text-zinc-500 font-medium">Total</p>
+          <p class="text-3xl font-bold text-white mt-1">{{ stats.total }}</p>
         </div>
         <div class="rounded-2xl p-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
           <p class="text-xs text-zinc-500 font-medium">Pendentes</p>
@@ -25,11 +47,12 @@
         </div>
       </div>
 
+      <!-- Lista de agendamentos -->
       <div class="rounded-2xl p-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
-        <h2 class="font-semibold text-white mb-4">Agendamentos de hoje</h2>
+        <h2 class="font-semibold text-white mb-4">Agendamentos — {{ dateLabel }}</h2>
         <div v-if="loading" class="text-center text-zinc-500 py-8">Carregando...</div>
         <div v-else-if="appointments.length === 0" class="text-center text-zinc-500 py-8">
-          Nenhum agendamento hoje.
+          Nenhum agendamento neste dia.
         </div>
         <div v-else class="space-y-3">
           <AppointmentCard v-for="a in appointments" :key="a._id" :appointment="a" @status-change="reload" />
@@ -49,32 +72,50 @@ const appointments = ref([])
 const loading = ref(true)
 let refreshTimer = null
 
-const today = computed(() =>
-  new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-)
-const stats = computed(() => ({
-  today: appointments.value.length,
-  pending: appointments.value.filter(a => a.status === 'pending').length,
-  confirmed: appointments.value.filter(a => a.status === 'confirmed').length,
-  cancelled: appointments.value.filter(a => a.status === 'cancelled').length
-}))
-
 function todayBrazil() {
   return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
     .split('/').reverse().join('-')
 }
 
+const todayStr = computed(() => todayBrazil())
+const selectedDate = ref(todayBrazil())
+
+const dateLabel = computed(() => {
+  const d = new Date(`${selectedDate.value}T12:00:00`)
+  const label = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return selectedDate.value === todayStr.value ? `Hoje, ${label}` : label
+})
+
+const stats = computed(() => ({
+  total: appointments.value.length,
+  pending: appointments.value.filter(a => a.status === 'pending').length,
+  confirmed: appointments.value.filter(a => a.status === 'confirmed').length,
+  cancelled: appointments.value.filter(a => a.status === 'cancelled').length
+}))
+
+function changeDay(delta) {
+  const d = new Date(`${selectedDate.value}T12:00:00`)
+  d.setDate(d.getDate() + delta)
+  selectedDate.value = d.toISOString().split('T')[0]
+  reload()
+}
+
+function goToday() {
+  selectedDate.value = todayBrazil()
+  reload()
+}
+
 async function reload() {
   loading.value = true
   try {
-    const res = await api.get('/appointments', { params: { date: todayBrazil() } })
+    const res = await api.get('/appointments', { params: { date: selectedDate.value } })
     appointments.value = res.data
   } catch { /* silencioso */ } finally { loading.value = false }
 }
 
 async function silentReload() {
   try {
-    const res = await api.get('/appointments', { params: { date: todayBrazil() } })
+    const res = await api.get('/appointments', { params: { date: selectedDate.value } })
     appointments.value = res.data
   } catch { /* silencioso */ }
 }
