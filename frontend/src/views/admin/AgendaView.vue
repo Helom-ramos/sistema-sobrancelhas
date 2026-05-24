@@ -50,8 +50,7 @@ import AppointmentCard from '@/components/AppointmentCard.vue'
 import api from '@/services/api.js'
 
 function todayBrazil() {
-  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-    .split('/').reverse().join('-')
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 }
 
 const selectedDate = ref(todayBrazil())
