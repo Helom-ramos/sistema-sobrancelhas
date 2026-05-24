@@ -262,9 +262,10 @@ const stats = computed(() => {
   const a = appointments.value
   const done      = a.filter(x => ['confirmed', 'completed'].includes(x.status)).length
   const cancelled = a.filter(x => x.status === 'cancelled').length
-  const active    = a.filter(x => x.status !== 'cancelled')
-  const revenue   = active.reduce((s, x) => s + (x.service?.price || 0), 0)
-  const avgTicket = active.length > 0 ? revenue / active.length : 0
+  // Apenas agendamentos com serviço válido entram na receita
+  const billed    = a.filter(x => x.status !== 'cancelled' && x.service?.price)
+  const revenue   = billed.reduce((s, x) => s + x.service.price, 0)
+  const avgTicket = billed.length > 0 ? revenue / billed.length : 0
   return { total: a.length, done, cancelled, revenue, avgTicket }
 })
 
@@ -276,12 +277,12 @@ const cancelRate = computed(() =>
 const byService = computed(() => {
   const map = {}
   appointments.value
-    .filter(a => a.status !== 'cancelled')
+    .filter(a => a.status !== 'cancelled' && a.service?.name)
     .forEach(a => {
-      const name = a.service?.name || '?'
+      const name = a.service.name
       if (!map[name]) map[name] = { name, count: 0, revenue: 0 }
       map[name].count++
-      map[name].revenue += a.service?.price || 0
+      map[name].revenue += a.service.price || 0
     })
   return Object.values(map).sort((a, b) => b.count - a.count)
 })
