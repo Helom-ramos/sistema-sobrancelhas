@@ -114,11 +114,12 @@ await Settings.findOneAndUpdate({}, {
     { day: 3, active: true,  start: '16:00', end: '19:00', start2: '', end2: '' },   // Qua
     { day: 4, active: true,  start: '16:00', end: '19:00', start2: '', end2: '' },   // Qui
     { day: 5, active: true,  start: '10:00', end: '12:00', start2: '15:00', end2: '19:00' }, // Sex
-    { day: 6, active: true,  start: '10:00', end: '12:00', start2: '15:00', end2: '19:00' }, // Sáb
+    { day: 6, active: true,  start: '10:00', end: '12:00', start2: '14:00', end2: '19:00' }, // Sáb
   ]
 }, { upsert: true, new: true })
 console.log('  ✅ Seg–Qui: 16h–19h')
-console.log('  ✅ Sex–Sáb: 10h–12h e 15h–19h')
+console.log('  ✅ Sex: 10h–12h e 15h–19h')
+console.log('  ✅ Sáb: 10h–12h e 14h–19h')
 
 await mongoose.disconnect()
 console.log('\n🎉 Concluído!')
