@@ -18,7 +18,7 @@
             style="background:#1a1a1a;border:1px solid #2a2a2a">
             ›
           </button>
-          <button v-if="selectedDate !== todayStr" @click="goToday"
+          <button v-if="!isToday" @click="goToday"
             class="h-9 px-4 rounded-xl text-xs font-medium text-white transition"
             style="background:#6d28d9">
             Hoje
@@ -73,17 +73,18 @@ const loading = ref(true)
 let refreshTimer = null
 
 function todayBrazil() {
-  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-    .split('/').reverse().join('-')
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 }
 
-const todayStr = computed(() => todayBrazil())
+const todayStr = ref(todayBrazil())
 const selectedDate = ref(todayBrazil())
 
+const isToday = computed(() => selectedDate.value === todayStr.value)
+
 const dateLabel = computed(() => {
-  const d = new Date(`${selectedDate.value}T12:00:00`)
+  const d = new Date(`${selectedDate.value}T12:00:00-03:00`)
   const label = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-  return selectedDate.value === todayStr.value ? `Hoje, ${label}` : label
+  return isToday.value ? `Hoje, ${label}` : label
 })
 
 const stats = computed(() => ({
@@ -114,6 +115,7 @@ async function reload() {
 }
 
 async function silentReload() {
+  todayStr.value = todayBrazil()
   try {
     const res = await api.get('/appointments', { params: { date: selectedDate.value } })
     appointments.value = res.data
