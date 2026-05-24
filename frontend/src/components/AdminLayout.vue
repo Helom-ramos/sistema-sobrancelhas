@@ -97,6 +97,7 @@ const navLinks = [
   { to: '/admin/clientes', icon: '👥', label: 'Clientes' },
   { to: '/admin/servicos', icon: '💆', label: 'Serviços' },
   { to: '/admin/horarios', icon: '🕐', label: 'Horários' },
+  { to: '/admin/relatorio', icon: '📈', label: 'Relatório' },
   { to: '/admin/configuracoes', icon: '⚙️', label: 'Configurações' }
 ]
 

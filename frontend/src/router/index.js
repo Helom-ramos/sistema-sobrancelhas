@@ -54,6 +54,11 @@ const routes = [
         component: () => import('@/views/admin/HorariosView.vue')
       },
       {
+        path: 'relatorio',
+        name: 'relatorio',
+        component: () => import('@/views/admin/RelatorioView.vue')
+      },
+      {
         path: 'configuracoes',
         name: 'configuracoes',
         component: () => import('@/views/admin/ConfigView.vue')

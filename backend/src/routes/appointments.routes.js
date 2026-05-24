@@ -57,9 +57,14 @@ router.post('/', async (req, res, next) => {
 // Admin: listar agendamentos
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { date, status } = req.query
+    const { date, startDate, endDate, status } = req.query
     const filter = {}
-    if (date) {
+    if (startDate && endDate) {
+      filter.datetime = {
+        $gte: new Date(`${startDate}T00:00:00-03:00`),
+        $lte: new Date(`${endDate}T23:59:59-03:00`)
+      }
+    } else if (date) {
       const start = new Date(`${date}T00:00:00-03:00`)
       const end = new Date(`${date}T23:59:59-03:00`)
       filter.datetime = { $gte: start, $lte: end }
