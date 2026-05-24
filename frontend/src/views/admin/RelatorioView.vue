@@ -22,12 +22,12 @@
       <!-- Datas personalizadas -->
       <div v-if="activePeriod === 'custom'" class="flex flex-wrap items-center gap-2">
         <input type="date" v-model="customStart"
-          class="h-9 px-3 rounded-xl text-sm text-white border focus:outline-none"
-          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark" />
-        <span class="text-zinc-500 text-sm">até</span>
+          class="h-9 px-3 rounded-xl text-sm text-white border focus:outline-none shrink-0"
+          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark;min-width:0" />
+        <span class="text-zinc-500 text-sm shrink-0">até</span>
         <input type="date" v-model="customEnd"
-          class="h-9 px-3 rounded-xl text-sm text-white border focus:outline-none"
-          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark" />
+          class="h-9 px-3 rounded-xl text-sm text-white border focus:outline-none shrink-0"
+          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark;min-width:0" />
         <button @click="loadData"
           class="h-9 px-4 rounded-xl text-xs font-medium text-white"
           style="background:#6d28d9">

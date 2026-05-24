@@ -12,7 +12,7 @@
           </button>
           <input type="date" v-model="selectedDate" @change="reload"
             class="h-9 px-3 rounded-xl text-sm text-white bg-transparent outline-none"
-            style="background:#1a1a1a;border:1px solid #2a2a2a;color-scheme:dark" />
+            style="background:#1a1a1a;border:1px solid #2a2a2a;color-scheme:dark;min-width:0;width:0;flex:1 1 0%" />
           <button @click="changeDay(1)"
             class="flex items-center justify-center w-9 h-9 rounded-xl text-zinc-400 hover:text-white transition"
             style="background:#1a1a1a;border:1px solid #2a2a2a">

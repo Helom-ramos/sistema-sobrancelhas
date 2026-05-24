@@ -6,12 +6,12 @@
       <!-- Filtros -->
       <div class="flex flex-wrap gap-2">
         <input type="date" v-model="selectedDate" @change="load"
-          class="h-10 px-3 rounded-xl text-sm text-white border focus:outline-none"
-          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark" />
+          class="h-10 px-3 rounded-xl text-sm text-white border focus:outline-none shrink-0"
+          style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark;min-width:0" />
 
         <select v-model="selectedServiceId" @change="load"
           class="h-10 px-3 rounded-xl text-sm text-white border focus:outline-none flex-1 min-w-0"
-          style="background:#1a1a1a;border-color:#2a2a2a">
+          style="background:#1a1a1a;border-color:#2a2a2a;min-width:0">
           <option value="">Selecione um serviço</option>
           <option v-for="s in services" :key="s._id" :value="s._id">
             {{ s.name }} ({{ s.duration }}min)

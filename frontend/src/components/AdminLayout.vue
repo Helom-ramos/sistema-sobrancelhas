@@ -75,7 +75,7 @@
         </div>
       </div>
 
-      <main class="flex-1 p-4 md:p-6">
+      <main class="flex-1 p-4 md:p-6 overflow-x-hidden">
         <slot />
       </main>
     </div>
