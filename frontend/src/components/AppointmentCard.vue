@@ -60,8 +60,11 @@ function formatTime(dt) {
 }
 
 function formatPhone(p) {
-  const d = p.replace(/\D/g, '')
-  return d.length === 11 ? `(${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}` : p
+  let d = p.replace(/\D/g, '')
+  if ((d.length === 13 || d.length === 12) && d.startsWith('55')) d = d.slice(2)
+  if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
+  if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+  return p
 }
 
 async function changeStatus(status) {

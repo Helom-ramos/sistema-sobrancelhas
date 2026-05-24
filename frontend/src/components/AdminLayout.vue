@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex" style="background:#0d0d0d">
+  <div class="min-h-screen flex overflow-x-hidden" style="background:#0d0d0d">
     <!-- Sidebar desktop -->
     <aside class="hidden md:flex flex-col w-56 fixed inset-y-0 left-0 border-r"
            style="background:#111111;border-color:#222222">
@@ -36,7 +36,7 @@
     </aside>
 
     <!-- Main -->
-    <div class="flex-1 md:ml-56 flex flex-col min-h-screen">
+    <div class="flex-1 md:ml-56 flex flex-col min-h-screen overflow-x-hidden">
       <!-- Mobile header -->
       <header class="md:hidden px-4 py-3 flex items-center justify-between sticky top-0 z-10 border-b"
               style="background:#111111;border-color:#222222">

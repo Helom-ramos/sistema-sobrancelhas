@@ -12,9 +12,9 @@
 
       <div class="space-y-3">
         <div v-if="loading" class="text-center text-zinc-500 py-8">Carregando...</div>
-        <div v-for="s in services" :key="s._id" class="rounded-2xl p-4"
+        <div v-for="s in services" :key="s._id" class="rounded-2xl p-4 overflow-hidden"
              style="background:#1a1a1a;border:1px solid #2a2a2a">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 min-w-0">
             <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
                  style="background:#2a2a2a">
               <img v-if="s.image" :src="s.image" :alt="s.name" class="w-full h-full object-cover" />
