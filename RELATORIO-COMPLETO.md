@@ -24,6 +24,7 @@
 13. [Bugs Enfrentados e Como Foram Resolvidos](#13-bugs-enfrentados-e-como-foram-resolvidos)
 14. [Glossário de Comandos Usados](#14-glossário-de-comandos-usados)
 15. [Aspectos Financeiros do Projeto](#15-aspectos-financeiros-do-projeto)
+16. [Pós-Lançamento: Bugs Críticos e Novas Funcionalidades](#16-pós-lançamento-bugs-críticos-e-novas-funcionalidades-25052026)
 
 ---
 
@@ -1583,7 +1584,315 @@ Para aprofundar (se quiser estudar mais):
 
 ---
 
+## 16. PÓS-LANÇAMENTO: BUGS CRÍTICOS E NOVAS FUNCIONALIDADES (25/05/2026)
+
+> Esta seção registra o que aconteceu **após o sistema ir ao ar** — um dia depois do lançamento. É um capítulo importante porque mostra como bugs aparecem em produção com usuários reais, e como corrigi-los sistematicamente.
+
+---
+
+### 16.1 Bug Crítico: Duplo Agendamento
+
+**O problema relatado:**
+A Déborah avisou que dois clientes conseguiram agendar o mesmo horário no mesmo dia. Isso nunca deveria acontecer — um salão não pode atender duas pessoas ao mesmo tempo.
+
+**Investigação:**
+Foram encontradas **duas causas independentes** — ambas precisavam ser corrigidas.
+
+---
+
+#### Causa Raiz 1 — Bug de Timezone no Filtro de Slots
+
+**Arquivo:** `backend/src/controllers/slots.controller.js`
+
+**O código problemático:**
+```javascript
+// ERRADO — usa setHours() que respeita o timezone do SERVIDOR
+const slotStart = new Date(dayStart)
+slotStart.setHours(h, m, 0, 0)  // ← problema aqui!
+```
+
+**Por que era errado:**
+O servidor Railway roda em UTC (Tempo Universal). O método `setHours(16, 30)` define 16h30 no timezone do servidor — que é 16h30 UTC, não 16h30 no Brasil.
+
+Mas os agendamentos são salvos no MongoDB com horário brasileiro: 16h30 BRT = **19h30 UTC**.
+
+Resultado: o sistema comparava:
+- Slot "16:30" → armazenado internamente como 16:30 UTC
+- Agendamento existente "16:30 BRT" → armazenado no banco como 19:30 UTC
+
+A comparação `slotStart (16:30 UTC) < appt.endDatetime (19:30 UTC)` nunca detectava conflito. **Todo slot sempre aparecia livre**, independente de já ter agendamento!
+
+**A correção:**
+```javascript
+// CORRETO — constrói o datetime com offset BRT fixo (-03:00)
+const slotStart = new Date(`${date}T${slot}:00-03:00`)
+const slotEnd = new Date(slotStart.getTime() + service.duration * 60000)
+```
+
+`2026-05-25T16:30:00-03:00` é inequívoco: significa 16h30 no fuso UTC-3 (Brasil). O JavaScript converte isso para 19h30 UTC internamente, que bate exatamente com o que está no banco.
+
+**Lição aprendida:** Em aplicações com fusos horários, **nunca use `setHours()`** — construa sempre datas com offset explícito ou use `Intl` APIs. Um server em UTC e dados em BRT é uma combinação perigosa.
+
+---
+
+#### Causa Raiz 2 — Sem Verificação de Conflito na Criação
+
+**Arquivo:** `backend/src/routes/appointments.routes.js`
+
+**O problema:**
+Mesmo que o filtro de slots estivesse correto, ainda existia uma janela de risco: dois clientes podendo abrir o sistema exatamente ao mesmo tempo, verem o mesmo horário livre, e ambos enviarem o formulário simultaneamente (race condition).
+
+O código original criava o agendamento direto, sem verificar se o horário já havia sido ocupado:
+```javascript
+// ANTES — sem verificação
+const appointment = await Appointment.create({ ... })
+```
+
+**A correção — verificação atômica antes de criar:**
+```javascript
+// DEPOIS — verifica conflito antes
+const conflict = await Appointment.findOne({
+  datetime: { $lt: endDatetime },
+  endDatetime: { $gt: datetime },
+  status: { $nin: ['cancelled'] }
+})
+if (conflict) {
+  return res.status(409).json({
+    error: 'Este horário não está mais disponível. Por favor, escolha outro horário.'
+  })
+}
+const appointment = await Appointment.create({ ... })
+```
+
+A lógica `datetime < endDatetime` e `endDatetime > datetime` detecta **qualquer sobreposição** — não só inícios idênticos. Por exemplo: se há um Brow Lamination de 60 min iniciando às 16h, qualquer serviço tentando iniciar às 16h30 também seria bloqueado.
+
+**O frontend** (BookingView.vue) foi atualizado para, ao receber HTTP 409, voltar automaticamente para a seleção de horário e exibir a mensagem de erro:
+```javascript
+} catch (err) {
+  const msg = err.response?.data?.error || 'Erro ao agendar. Tente novamente.'
+  showError(msg)
+  if (err.response?.status === 409) {
+    selectedTime.value = ''
+    step.value = 2  // volta para selecionar horário
+  }
+}
+```
+
+**Com as duas correções juntas:**
+- Os slots exibidos são reais (timezone correto)
+- Mesmo que dois clientes passem pela exibição, apenas um consegue criar o agendamento
+
+---
+
+#### Limpeza dos Agendamentos Duplicados
+
+Os duplicados que existiam no banco foram identificados e cancelados via script:
+
+**`backend/fix-conflicts.js`** — script criado para detectar e resolver conflitos:
+```javascript
+// Carrega todos agendamentos ativos, ordenados por data (mais antigo primeiro)
+const all = await Appointment.find({ status: { $nin: ['cancelled'] } }).sort({ datetime: 1 })
+
+// Para cada agendamento, verifica se conflita com algum já "mantido"
+for (const appt of all) {
+  const conflict = kept.find(k =>
+    appt.datetime < k.endDatetime && appt.endDatetime > k.datetime
+  )
+  if (conflict) toRemove.push(appt._id)  // duplicado — remove
+  else kept.push(appt)                    // primeiro do horário — mantém
+}
+
+// Cancela os duplicados
+await Appointment.updateMany({ _id: { $in: toRemove } }, { status: 'cancelled' })
+```
+
+**Resultado:**
+- 2 agendamentos duplicados encontrados no dia 25/05 às 16:30:
+  - **MANTIDO:** Érika — Designer de Sobrancelha (primeira a agendar)
+  - **CANCELADO:** Marcela Soares — Designer + Henna
+  - **CANCELADO:** Luana — Designer de Sobrancelha
+
+---
+
+### 16.2 Bug: Botão "Hoje" Aparecendo Incorretamente
+
+**O problema:**
+No Dashboard e na Agenda, o botão "Hoje" aparecia mesmo quando o usuário já estava visualizando o dia atual.
+
+**Causa:**
+A função `todayBrazil()` usava `toLocaleDateString('pt-BR', ...)`:
+```javascript
+// PROBLEMÁTICO
+function todayBrazil() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    .split('/').reverse().join('-')
+  // retorna '25/5/2026' ou '25/05/2026' dependendo do browser!
+}
+```
+
+O método `toLocaleDateString` não garante zero-padding no mês. Alguns browsers retornam `'25/5/2026'`, outros `'25/05/2026'`. Se o campo `selectedDate` tinha `'2026-05-25'` (com zero) e `todayStr` retornava `'2026-5-25'` (sem zero), a comparação falhava e o botão aparecia indevidamente.
+
+**A correção:**
+```javascript
+// CORRETO — en-CA sempre retorna YYYY-MM-DD com zeros
+function todayBrazil() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
+}
+```
+
+O locale `en-CA` (Canada) formata datas no padrão ISO `YYYY-MM-DD`, sempre com zeros — exatamente o que precisamos para comparações de string.
+
+Além disso, `todayStr` foi alterado de `computed` (cacheado, não se atualiza ao virar meia-noite) para `ref` atualizado a cada refresh automático (30s).
+
+---
+
+### 16.3 Nova Funcionalidade: Navegação de Data no Dashboard
+
+**Antes:** O Dashboard mostrava apenas os agendamentos do dia atual, sem opção de ver outros dias.
+
+**Depois:** Controles de navegação adicionados:
+- Botão **‹** — vai para o dia anterior
+- **Campo de data** — clique para escolher qualquer dia no calendário
+- Botão **›** — vai para o dia seguinte
+- Botão **Hoje** — volta ao dia atual (aparece só quando fora de hoje)
+- **Label descritivo** — ex: "Hoje, segunda-feira, 25 de maio de 2026"
+
+Isso permite que a Déborah veja o histórico de qualquer dia — quem agendou, quem cancelou, qual foi a receita daquele dia.
+
+---
+
+### 16.4 Nova Tela: Horários Disponíveis
+
+**Rota:** `/admin/horarios`
+**Menu:** 🕐 Horários
+
+**O que faz:**
+A Déborah seleciona uma data e um serviço, e o sistema exibe uma **timeline completa do dia** — mostrando cada slot como disponível (verde) ou ocupado (vermelho).
+
+**Como funciona internamente:**
+1. Carrega todos os serviços ativos (dropdown)
+2. Quando data + serviço selecionados, faz duas chamadas simultâneas:
+   ```javascript
+   const [slotsRes, apptRes] = await Promise.all([
+     api.get('/slots', { params: { date, serviceId } }),  // slots livres
+     api.get('/appointments', { params: { date } })        // agendamentos do dia
+   ])
+   ```
+3. Combina os dados: slots livres aparecem em verde, horários com agendamento em vermelho
+4. Para slots ocupados, exibe: nome do cliente, serviço, duração, telefone e status
+
+**Exemplo visual da timeline:**
+```
+16:00  🟢 Disponível
+16:30  🔴 Érika — Designer de Sobrancelha · 30min · (38) 9xxxx-xxxx · Confirmado
+17:00  🟢 Disponível
+17:30  🟢 Disponível
+18:00  🔴 Ana Paula — Brow Lamination · 60min · (38) 9xxxx-xxxx · Pendente
+```
+
+---
+
+### 16.5 Nova Tela: Relatório com Gráfico
+
+**Rota:** `/admin/relatorio`
+**Menu:** 📈 Relatório
+
+**Filtros de período disponíveis:**
+
+| Filtro | O que mostra |
+|--------|-------------|
+| 7 dias | Últimos 7 dias (padrão) |
+| 30 dias | Últimos 30 dias |
+| Mês atual | Do dia 1 até hoje |
+| Mês anterior | Mês completo anterior |
+| Personalizado | Datas livres com calendário |
+
+**Cards de estatísticas:**
+- **Total** — todos os agendamentos do período
+- **Realizados** — confirmados + concluídos
+- **Cancelados** — agendamentos cancelados
+- **Taxa de cancelamento** — percentual de cancelamentos
+- **Receita estimada** — soma dos preços dos agendamentos não cancelados
+- **Ticket médio** — receita ÷ número de atendimentos
+
+**O Gráfico SVG:**
+
+O gráfico foi construído sem bibliotecas externas — puro SVG gerado pelo Vue.js.
+
+```javascript
+// viewBox fixo de 560x165 pixels
+// Cada barra representa um dia (ou semana se período > 31 dias)
+// Barra rosa = agendamentos ativos
+// Porção vermelha escura empilhada = cancelados
+// Contagem exibida acima de cada barra
+```
+
+Para períodos curtos (≤ 31 dias): barras diárias.
+Para períodos longos (> 31 dias): barras semanais (agrupa 7 dias por bucket).
+
+**Implementação do agrupamento por dia:**
+```javascript
+// Para cada dia entre startDate e endDate:
+const cur = new Date(`${startDate}T12:00:00-03:00`)
+while (cur <= end) {
+  const key = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(cur)
+  const dayAppts = appointments.filter(a =>
+    new Intl.DateTimeFormat('en-CA', ...).format(new Date(a.datetime)) === key
+  )
+  result.push({ key, label, total, active, cancelled })
+  cur.setDate(cur.getDate() + 1)
+}
+```
+
+**Breakdown por serviço:**
+- Ranking dos serviços mais agendados
+- Barra de progresso horizontal proporcional ao mais popular
+- Quantidade de agendamentos e receita gerada por cada serviço
+
+**Insight automático:**
+- "📈 Dia mais movimentado: segunda-feira, 25/05 com 8 agendamentos"
+
+**Backend atualizado:**
+O endpoint `GET /api/appointments` foi estendido para aceitar `startDate` e `endDate`:
+```javascript
+// Antes: só aceitava ?date=YYYY-MM-DD (único dia)
+// Depois: aceita também ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD (intervalo)
+if (startDate && endDate) {
+  filter.datetime = {
+    $gte: new Date(`${startDate}T00:00:00-03:00`),
+    $lte: new Date(`${endDate}T23:59:59-03:00`)
+  }
+}
+```
+
+---
+
+### 16.6 Lições do Pós-Lançamento
+
+**1. Timezone é o inimigo número 1 em sistemas de agendamento**
+Um servidor em UTC + dados salvos em BRT + comparações com `setHours()` = desastre silencioso. O sistema parecia funcionar localmente (onde o timezone do dev era BRT) mas falhou em produção (Railway em UTC).
+
+**Regra:** Sempre use offsets explícitos (`-03:00`) ao construir datas para comparação. Nunca confie em timezone implícito do servidor.
+
+**2. Validação deve existir em múltiplas camadas**
+- Camada 1 (UX): mostrar apenas slots disponíveis
+- Camada 2 (segurança): verificar no banco antes de criar
+
+Se só a camada 1 existir, um race condition derruba o sistema. Se só a camada 2 existir, o UX é ruim (usuário seleciona horário e só descobre que está ocupado ao final). As duas juntas são robustas.
+
+**3. `toLocaleDateString` não é confiável para comparações**
+Use `Intl.DateTimeFormat('en-CA')` para obter strings `YYYY-MM-DD` consistentes entre browsers e sistemas operacionais.
+
+**4. Bugs de produção aparecem com usuários reais**
+Nenhum teste de desenvolvimento simulou dois usuários abrindo o sistema simultaneamente. Só com clientes reais o problema emergiu.
+
+**5. Scripts de limpeza são parte do trabalho**
+Quando um bug deixa dados inconsistentes no banco, é necessário escrever um script para corrigi-los com segurança. O `fix-conflicts.js` mostra o padrão: carregar tudo, ordenar por data, detectar conflitos, corrigir os posteriores — nunca deletar, sempre cancelar (dado histórico fica preservado).
+
+---
+
 **Fim do Relatório.**
 **Autor original do código:** Helom Ramos
 **Assistente IA:** Claude Code (Anthropic)
 **Data de finalização:** 24 de Maio de 2026
+**Última atualização:** 25 de Maio de 2026 — Pós-lançamento: bugs críticos corrigidos + Horários + Relatório
