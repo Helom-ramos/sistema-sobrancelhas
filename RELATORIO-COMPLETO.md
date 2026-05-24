@@ -1891,8 +1891,95 @@ Quando um bug deixa dados inconsistentes no banco, é necessário escrever um sc
 
 ---
 
+### 16.7 Bug: Formatação de Telefone Errada
+
+**Problema detectado:** Na tela de Clientes (e em qualquer tela que exibisse o telefone do cliente), os números apareciam com o DDD errado — os 2 primeiros dígitos do número eram interpretados como DDD.
+
+**Exemplo do erro:**
+- Número no banco: `3899432112` (10 dígitos, DDD real = 38)
+- Exibição errada: `(99) 43211-2` — pegava dígitos 2-3 como DDD
+- Exibição correta: `(38) 9943-2112`
+
+**Causa raiz:**
+
+A função `formatPhone` estava com um slice incorreto:
+
+```javascript
+// ERRADO — trata posições 0-1 como código de país 55
+return d.length === 11 ? `(${d.slice(2,4)}) ${d.slice(4,9)}-${d.slice(9)}` : p
+
+// CORRETO — DDD está nas posições 0-1
+return d.length === 11 ? `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}` : p
+```
+
+Este erro provavelmente surgiu de uma versão anterior que assumia que números sempre chegariam com o prefixo `55` (código do Brasil). Quando os clientes digitam apenas DDD + número (sem `55`), o slice estava errado.
+
+**Correção aplicada em 3 arquivos:**
+- `frontend/src/components/AppointmentCard.vue`
+- `frontend/src/views/admin/ClientesView.vue`
+- `frontend/src/views/admin/HorariosView.vue`
+
+**Versão final da função:**
+```javascript
+function formatPhone(p) {
+  let d = p.replace(/\D/g, '')
+  // Remove prefixo 55 se presente (números digitados com código do país)
+  if ((d.length === 13 || d.length === 12) && d.startsWith('55')) d = d.slice(2)
+  if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
+  if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+  return p  // retorna original se não reconhecer o formato
+}
+```
+
+**Casos tratados:**
+| Entrada | Saída |
+|---------|-------|
+| `3899432112` (10 dígitos) | `(38) 9943-2112` |
+| `38994321122` (11 dígitos) | `(38) 99432-1122` |
+| `5511987654321` (13 dígitos com `55`) | `(11) 98765-4321` |
+| `(98) 82943-03` (formato inválido/incompleto) | `(98) 82943-03` (retorna original) |
+
+---
+
+### 16.8 Bug: Overflow Horizontal no Mobile (Tela de Serviços)
+
+**Problema detectado:** A tela de Serviços (`/admin/servicos`) permitia scroll horizontal no celular — a página era mais larga que o viewport e exigia arrastar para o lado para ver o conteúdo completo.
+
+**Causa:** O layout flex do `AdminLayout` (`min-h-screen flex`) não tinha restrição de overflow. Em alguns casos, conteúdo interno (botões, texto) forçava a largura do container pai para além de `100vw`.
+
+**Correção aplicada:**
+
+Em `AdminLayout.vue`, três camadas de `overflow-x: hidden` garantem contenção total:
+
+```html
+<!-- 1. Div raiz — nova proteção adicionada -->
+<div class="min-h-screen flex overflow-x-hidden">
+
+  <!-- 2. Div de conteúdo — já existia -->
+  <div class="flex-1 md:ml-56 flex flex-col min-h-screen overflow-x-hidden">
+
+    <!-- 3. Main — já existia -->
+    <main class="flex-1 p-4 md:p-6 overflow-x-hidden">
+```
+
+Em `ServicosView.vue`, os cards foram ajustados para não expandir além do container:
+```html
+<!-- Card com overflow-hidden para cortar conteúdo que ultrapasse -->
+<div class="rounded-2xl p-4 overflow-hidden">
+  <!-- Flex com min-w-0 para permitir truncamento de texto -->
+  <div class="flex items-center gap-3 min-w-0">
+    <!-- Área de texto com flex-1 min-w-0 para truncar corretamente -->
+    <div class="flex-1 min-w-0">
+```
+
+**Por que `min-w-0` é necessário?**
+
+Em CSS Flexbox, o tamanho mínimo padrão de um elemento flex é o tamanho do seu conteúdo. Isso faz com que texto longo ou elementos internos "empurrem" o container para além da largura disponível. `min-w-0` define o mínimo como zero, permitindo que o `flex-1` realmente encolha conforme necessário.
+
+---
+
 **Fim do Relatório.**
 **Autor original do código:** Helom Ramos
 **Assistente IA:** Claude Code (Anthropic)
 **Data de finalização:** 24 de Maio de 2026
-**Última atualização:** 25 de Maio de 2026 — Pós-lançamento: bugs críticos corrigidos + Horários + Relatório
+**Última atualização:** 25 de Maio de 2026 — Bugs adicionais corrigidos: telefone e responsividade mobile
