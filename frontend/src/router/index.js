@@ -49,6 +49,11 @@ const routes = [
         component: () => import('@/views/admin/ServicosView.vue')
       },
       {
+        path: 'horarios',
+        name: 'horarios',
+        component: () => import('@/views/admin/HorariosView.vue')
+      },
+      {
         path: 'configuracoes',
         name: 'configuracoes',
         component: () => import('@/views/admin/ConfigView.vue')

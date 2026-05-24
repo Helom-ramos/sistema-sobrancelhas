@@ -96,6 +96,7 @@ const navLinks = [
   { to: '/admin/agenda', icon: '📅', label: 'Agenda' },
   { to: '/admin/clientes', icon: '👥', label: 'Clientes' },
   { to: '/admin/servicos', icon: '💆', label: 'Serviços' },
+  { to: '/admin/horarios', icon: '🕐', label: 'Horários' },
   { to: '/admin/configuracoes', icon: '⚙️', label: 'Configurações' }
 ]
 
