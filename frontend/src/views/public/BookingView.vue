@@ -342,7 +342,12 @@ async function submitBooking() {
     appointmentId.value = res.data.id
     step.value = 4
   } catch (err) {
-    showError(err.response?.data?.error || 'Erro ao agendar. Tente novamente.')
+    const msg = err.response?.data?.error || 'Erro ao agendar. Tente novamente.'
+    showError(msg)
+    if (err.response?.status === 409) {
+      selectedTime.value = ''
+      step.value = 2
+    }
   } finally { submitting.value = false }
 }
 

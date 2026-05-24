@@ -28,6 +28,16 @@ router.post('/', async (req, res, next) => {
     const datetime = new Date(`${date}T${time}:00-03:00`)
     const endDatetime = new Date(datetime.getTime() + service.duration * 60000)
 
+    // Verificar conflito de horário (race condition entre múltiplos clientes)
+    const conflict = await Appointment.findOne({
+      datetime: { $lt: endDatetime },
+      endDatetime: { $gt: datetime },
+      status: { $nin: ['cancelled'] }
+    })
+    if (conflict) {
+      return res.status(409).json({ error: 'Este horário não está mais disponível. Por favor, escolha outro horário.' })
+    }
+
     const appointment = await Appointment.create({
       client: client._id,
       service: service._id,
