@@ -35,7 +35,7 @@
 
         <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
           <h2 class="font-semibold text-white">Parâmetros</h2>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="lbl">Intervalo entre atend. (min)</label>
               <input v-model.number="form.breakBetweenAppointments" type="number" min="0" class="inp" />

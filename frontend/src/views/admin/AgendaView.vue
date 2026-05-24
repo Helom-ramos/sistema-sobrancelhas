@@ -1,19 +1,19 @@
 <template>
   <AdminLayout>
     <div class="space-y-5">
-      <div class="flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 class="text-2xl font-bold text-white">Agenda</h1>
-        <div class="flex items-center gap-2">
-          <button @click="prevDay" class="p-2 rounded-xl border" style="background:#1a1a1a;border-color:#2a2a2a">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <button @click="prevDay" class="p-2 rounded-xl border shrink-0" style="background:#1a1a1a;border-color:#2a2a2a">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
           </button>
           <input type="date" v-model="selectedDate" @change="load"
-            class="rounded-xl px-3 py-2 text-sm text-white border focus:outline-none"
+            class="flex-1 rounded-xl px-3 py-2 text-sm text-white border focus:outline-none min-w-0"
             style="background:#1a1a1a;border-color:#2a2a2a;color-scheme:dark"
           />
-          <button @click="nextDay" class="p-2 rounded-xl border" style="background:#1a1a1a;border-color:#2a2a2a">
+          <button @click="nextDay" class="p-2 rounded-xl border shrink-0" style="background:#1a1a1a;border-color:#2a2a2a">
             <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>

@@ -12,30 +12,40 @@
 
       <div class="space-y-3">
         <div v-if="loading" class="text-center text-zinc-500 py-8">Carregando...</div>
-        <div v-for="s in services" :key="s._id" class="rounded-2xl p-4 flex items-center gap-4"
+        <div v-for="s in services" :key="s._id" class="rounded-2xl p-4"
              style="background:#1a1a1a;border:1px solid #2a2a2a">
-          <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
-               style="background:#2a2a2a">
-            <img v-if="s.image" :src="s.image" :alt="s.name" class="w-full h-full object-cover" />
-            <span v-else class="text-2xl">💆</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <p class="font-semibold text-white text-sm truncate">{{ s.name }}</p>
-              <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
-                    :style="s.active ? 'background:#14532d;color:#86efac' : 'background:#1a1a1a;color:#52525b;border:1px solid #3f3f46'">
-                {{ s.active ? 'Ativo' : 'Inativo' }}
-              </span>
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
+                 style="background:#2a2a2a">
+              <img v-if="s.image" :src="s.image" :alt="s.name" class="w-full h-full object-cover" />
+              <span v-else class="text-2xl">💆</span>
             </div>
-            <p class="text-xs text-zinc-500 mt-0.5 truncate">{{ s.description }}</p>
-            <div class="flex gap-3 mt-1">
-              <span class="text-xs text-zinc-500">⏱ {{ s.duration }} min</span>
-              <span class="text-xs font-semibold" style="color:#e8557a">R$ {{ s.price }}</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="font-semibold text-white text-sm truncate">{{ s.name }}</p>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
+                      :style="s.active ? 'background:#14532d;color:#86efac' : 'background:#1a1a1a;color:#52525b;border:1px solid #3f3f46'">
+                  {{ s.active ? 'Ativo' : 'Inativo' }}
+                </span>
+              </div>
+              <p class="text-xs text-zinc-500 mt-0.5 truncate">{{ s.description }}</p>
+              <div class="flex gap-3 mt-1">
+                <span class="text-xs text-zinc-500">⏱ {{ s.duration }} min</span>
+                <span class="text-xs font-semibold" style="color:#e8557a">R$ {{ s.price }}</span>
+              </div>
             </div>
           </div>
-          <div class="flex flex-col gap-2 shrink-0">
-            <button @click="openEdit(s)" class="text-xs text-zinc-400 hover:text-white transition-colors">✏️ Editar</button>
-            <button @click="toggle(s)" class="text-xs text-zinc-400 hover:text-white transition-colors">
+          <div class="flex gap-2 mt-3">
+            <button @click="openEdit(s)"
+              class="flex-1 py-2 rounded-xl text-xs font-medium border transition-colors"
+              style="background:#0d0d0d;border-color:#2a2a2a;color:#a1a1aa">
+              ✏️ Editar
+            </button>
+            <button @click="toggle(s)"
+              class="flex-1 py-2 rounded-xl text-xs font-medium border transition-colors"
+              :style="s.active
+                ? 'background:#1a0505;border-color:#3f1010;color:#f87171'
+                : 'background:#051a0a;border-color:#103f10;color:#86efac'">
               {{ s.active ? '🔴 Desativar' : '🟢 Ativar' }}
             </button>
           </div>
