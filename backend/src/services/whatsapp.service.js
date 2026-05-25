@@ -81,9 +81,7 @@ export async function sendPresenceCheck(appointmentId) {
     `Seu horário é em *30 minutos*:\n` +
     `💆 ${appt.service.name}\n` +
     `⏰ ${fmtTime(appt.datetime)}\n\n` +
-    `Você vai comparecer?\n` +
-    `1️⃣ *SIM*, estarei lá\n` +
-    `2️⃣ *NÃO*, preciso cancelar`
+    `Te esperamos! 🌸`
 
   await send(appt.client.phone, msg)
   appt.confirmation.reminderSent = true
