@@ -43,7 +43,7 @@ router.post('/webhook', async (req, res) => {
 
     appt.confirmation.response = isYes ? 'yes' : 'no'
     appt.confirmation.respondedAt = new Date()
-    if (isNo) appt.status = 'cancelled'
+    if (isNo) { appt.status = 'cancelled'; appt.cancelledBy = 'whatsapp' }
     await appt.save()
 
     await notifyOwnerOfResponse(appt._id, isYes ? 'yes' : 'no').catch(console.error)

@@ -11,6 +11,11 @@
         <p v-if="appointment.client?.phone" class="text-xs text-zinc-500">
           📱 {{ formatPhone(appointment.client.phone) }}
         </p>
+        <p v-if="appointment.status === 'cancelled' && appointment.cancelledBy"
+           class="text-xs mt-1 px-2 py-0.5 rounded-full inline-block"
+           :style="cancelledByStyle(appointment.cancelledBy)">
+          {{ cancelledByLabel(appointment.cancelledBy) }}
+        </p>
       </div>
     </div>
     <div class="mt-3">
@@ -57,6 +62,13 @@ function formatTime(dt) {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit'
   })
+}
+
+function cancelledByLabel(by) {
+  return { client: '👤 Cancelado pelo cliente', admin: '⚙️ Cancelado pelo admin', whatsapp: '📱 Cancelado via WhatsApp' }[by] || ''
+}
+function cancelledByStyle(by) {
+  return { client: 'background:#1a0a10;color:#f9a8d4;border:1px solid #e8557a40', admin: 'background:#1a1a2e;color:#a5b4fc;border:1px solid #6366f140', whatsapp: 'background:#0a1a0f;color:#86efac;border:1px solid #22c55e40' }[by] || ''
 }
 
 function formatPhone(p) {

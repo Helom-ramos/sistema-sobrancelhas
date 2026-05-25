@@ -13,6 +13,7 @@ const appointmentSchema = new mongoose.Schema(
     },
     notes: { type: String, default: '' },
     createdBy: { type: String, enum: ['admin', 'client'], default: 'client' },
+    cancelledBy: { type: String, enum: ['client', 'admin', 'whatsapp', null], default: null },
     confirmation: {
       reminderSent: { type: Boolean, default: false },
       response: { type: String, enum: ['yes', 'no', 'no_response', null], default: null },

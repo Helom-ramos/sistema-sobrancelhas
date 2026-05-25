@@ -89,6 +89,7 @@ router.post('/:id/cancel', async (req, res, next) => {
     if (new Date(appt.datetime) < new Date()) return res.status(400).json({ error: 'Não é possível cancelar um agendamento passado' })
 
     appt.status = 'cancelled'
+    appt.cancelledBy = 'client'
     await appt.save()
 
     sendCancellationNotification(appt._id).catch(console.error)
@@ -116,9 +117,11 @@ router.get('/:id/public', async (req, res, next) => {
 router.patch('/:id/status', requireAuth, async (req, res, next) => {
   try {
     const { status } = req.body
+    const update = { status }
+    if (status === 'cancelled') update.cancelledBy = 'admin'
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { status },
+      update,
       { new: true }
     ).populate('client service')
     if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' })
