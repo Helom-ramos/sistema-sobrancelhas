@@ -22,14 +22,29 @@
           </div>
         </section>
 
-        <section class="rounded-2xl p-5 space-y-3" style="background:#1a1a1a;border:1px solid #2a2a2a">
+        <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
           <h2 class="font-semibold text-white">Horário de Funcionamento</h2>
-          <div v-for="h in form.workingHours" :key="h.day" class="flex items-center gap-3">
-            <input type="checkbox" v-model="h.active" class="rounded" />
-            <span class="w-10 text-sm text-zinc-300 font-medium">{{ dayNames[h.day] }}</span>
-            <input v-model="h.start" type="time" :disabled="!h.active" class="inp w-28" style="padding:0.5rem 0.75rem" />
-            <span class="text-zinc-600 text-sm">até</span>
-            <input v-model="h.end" type="time" :disabled="!h.active" class="inp w-28" style="padding:0.5rem 0.75rem" />
+          <div v-for="h in form.workingHours" :key="h.day" class="space-y-2">
+            <!-- Linha principal: dia + horário de expediente -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <input type="checkbox" v-model="h.active" class="rounded shrink-0" />
+              <span class="w-9 text-sm text-zinc-300 font-medium shrink-0">{{ dayNames[h.day] }}</span>
+              <input v-model="h.start" type="time" :disabled="!h.active" class="inp" style="padding:0.5rem 0.75rem;width:7.5rem;min-width:0" />
+              <span class="text-zinc-600 text-sm shrink-0">até</span>
+              <input v-model="h.end" type="time" :disabled="!h.active" class="inp" style="padding:0.5rem 0.75rem;width:7.5rem;min-width:0" />
+            </div>
+            <!-- Linha de intervalo (visível só quando o dia está ativo) -->
+            <div v-if="h.active" class="flex items-center gap-2 flex-wrap pl-11">
+              <span class="text-xs text-zinc-500 shrink-0">☕ Intervalo:</span>
+              <input v-model="h.breakStart" type="time" class="inp" placeholder="--:--"
+                style="padding:0.4rem 0.6rem;width:7rem;min-width:0;font-size:0.75rem" />
+              <span class="text-zinc-600 text-xs shrink-0">às</span>
+              <input v-model="h.breakEnd" type="time" class="inp" placeholder="--:--"
+                style="padding:0.4rem 0.6rem;width:7rem;min-width:0;font-size:0.75rem" />
+              <button v-if="h.breakStart || h.breakEnd" type="button"
+                @click="h.breakStart = ''; h.breakEnd = ''"
+                class="text-xs text-zinc-600 hover:text-red-400 transition-colors shrink-0">✕ limpar</button>
+            </div>
           </div>
         </section>
 
@@ -81,7 +96,7 @@ const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
 const form = ref({
   salonName: '', phone: '', address: '',
-  workingHours: [0,1,2,3,4,5,6].map(day => ({ day, active: day >= 1 && day <= 5, start: '09:00', end: '18:00' })),
+  workingHours: [0,1,2,3,4,5,6].map(day => ({ day, active: day >= 1 && day <= 5, start: '09:00', end: '18:00', breakStart: '', breakEnd: '' })),
   breakBetweenAppointments: 10, advanceBookingDays: 30,
   reminderMinutesBefore: 30, noResponseAlertMinutes: 15
 })
@@ -98,7 +113,13 @@ onMounted(async () => {
         reminderMinutesBefore: s.reminderMinutesBefore ?? 30,
         noResponseAlertMinutes: s.noResponseAlertMinutes ?? 15,
       })
-      if (s.workingHours?.length) form.value.workingHours = s.workingHours
+      if (s.workingHours?.length) {
+        form.value.workingHours = s.workingHours.map(h => ({
+          ...h,
+          breakStart: h.breakStart || '',
+          breakEnd: h.breakEnd || ''
+        }))
+      }
     }
   } catch { errorMsg.value = 'Erro ao carregar.' } finally { loading.value = false }
 })

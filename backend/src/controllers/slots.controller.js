@@ -21,11 +21,13 @@ export async function getAvailableSlots(req, res, next) {
 
     const toMinutes = (str) => { const [h, m] = str.split(':').map(Number); return h * 60 + m }
 
-    // Monta turnos: sempre tem o 1º turno; 2º turno é opcional
-    const shifts = [{ start: toMinutes(dayConfig.start), end: toMinutes(dayConfig.end) }]
-    if (dayConfig.start2 && dayConfig.end2) {
-      shifts.push({ start: toMinutes(dayConfig.start2), end: toMinutes(dayConfig.end2) })
-    }
+    // Monta turnos: se houver intervalo, divide em manhã + tarde
+    const shifts = dayConfig.breakStart && dayConfig.breakEnd
+      ? [
+          { start: toMinutes(dayConfig.start),    end: toMinutes(dayConfig.breakStart) },
+          { start: toMinutes(dayConfig.breakEnd),  end: toMinutes(dayConfig.end) }
+        ]
+      : [{ start: toMinutes(dayConfig.start), end: toMinutes(dayConfig.end) }]
 
     // Gera slots para cada turno
     const slotInterval = service.duration + settings.breakBetweenAppointments
