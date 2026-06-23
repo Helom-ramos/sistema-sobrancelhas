@@ -24,6 +24,7 @@
 
         <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
           <h2 class="font-semibold text-white">Horário de Funcionamento</h2>
+          <p class="text-xs -mt-2" style="color:#f9a8d4">⚠️ Estes dias se repetem TODA semana. Para folgar em uma data específica (ex.: só dia 23/06), NÃO desmarque o dia aqui — use a seção "Folgas / Dias Bloqueados" mais abaixo.</p>
           <div v-for="h in form.workingHours" :key="h.day" class="space-y-2">
             <!-- Linha principal: dia + horário de expediente -->
             <div class="flex items-center gap-2 flex-wrap">
@@ -46,6 +47,27 @@
                 class="text-xs text-zinc-600 hover:text-red-400 transition-colors shrink-0">✕ limpar</button>
             </div>
           </div>
+        </section>
+
+        <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
+          <h2 class="font-semibold text-white">Folgas / Dias Bloqueados</h2>
+          <p class="text-xs text-zinc-500 -mt-2">Bloqueie uma data específica (feriado ou folga) sem mexer no horário semanal. Os clientes não conseguem agendar nesse dia — as outras semanas continuam normais.</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <input v-model="newBlockedDate" type="date" class="inp" style="width:11rem;min-width:0" />
+            <button type="button" @click="addBlockedDate"
+              class="text-sm font-medium px-4 py-2 rounded-xl transition-colors shrink-0"
+              style="background:#2a2a2a;color:#e8557a">+ Bloquear dia</button>
+          </div>
+          <div v-if="form.blockedDates.length" class="flex flex-wrap gap-2">
+            <span v-for="d in sortedBlockedDates" :key="d"
+              class="inline-flex items-center gap-2 text-sm rounded-lg px-3 py-1.5"
+              style="background:#1a0a10;border:1px solid #e8557a40;color:#f9a8d4">
+              {{ formatDate(d) }}
+              <button type="button" @click="removeBlockedDate(d)"
+                class="hover:text-white transition-colors" title="Desbloquear">✕</button>
+            </span>
+          </div>
+          <p v-else class="text-xs text-zinc-600">Nenhuma data bloqueada.</p>
         </section>
 
         <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
@@ -86,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AdminLayout from '@/components/AdminLayout.vue'
 import api from '@/services/api.js'
 
@@ -98,8 +120,28 @@ const form = ref({
   salonName: '', phone: '', address: '',
   workingHours: [0,1,2,3,4,5,6].map(day => ({ day, active: day >= 1 && day <= 5, start: '09:00', end: '18:00', breakStart: '', breakEnd: '' })),
   breakBetweenAppointments: 10, advanceBookingDays: 30,
-  reminderMinutesBefore: 30, noResponseAlertMinutes: 15
+  reminderMinutesBefore: 30, noResponseAlertMinutes: 15,
+  blockedDates: []
 })
+
+const newBlockedDate = ref('')
+const sortedBlockedDates = computed(() => [...form.value.blockedDates].sort())
+
+function addBlockedDate() {
+  const d = newBlockedDate.value
+  if (!d) return
+  if (!form.value.blockedDates.includes(d)) form.value.blockedDates.push(d)
+  newBlockedDate.value = ''
+}
+function removeBlockedDate(d) {
+  form.value.blockedDates = form.value.blockedDates.filter(x => x !== d)
+}
+function formatDate(d) {
+  const dt = new Date(`${d}T12:00:00-03:00`)
+  const wd = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dt.getDay()]
+  const [y, m, day] = d.split('-')
+  return `${wd} ${day}/${m}/${y}`
+}
 
 onMounted(async () => {
   try {
@@ -112,6 +154,7 @@ onMounted(async () => {
         advanceBookingDays: s.advanceBookingDays ?? 30,
         reminderMinutesBefore: s.reminderMinutesBefore ?? 30,
         noResponseAlertMinutes: s.noResponseAlertMinutes ?? 15,
+        blockedDates: Array.isArray(s.blockedDates) ? s.blockedDates : [],
       })
       if (s.workingHours?.length) {
         form.value.workingHours = s.workingHours.map(h => ({

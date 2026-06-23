@@ -2,6 +2,7 @@ import { Router } from 'express'
 import Appointment from '../models/Appointment.js'
 import Client from '../models/Client.js'
 import Service from '../models/Service.js'
+import Settings from '../models/Settings.js'
 import { requireAuth } from '../middleware/auth.middleware.js'
 import { sendBookingConfirmation, sendCancellationNotification } from '../services/whatsapp.service.js'
 
@@ -17,6 +18,12 @@ router.post('/', async (req, res, next) => {
 
     const service = await Service.findById(serviceId)
     if (!service || !service.active) return res.status(400).json({ error: 'Serviço indisponível' })
+
+    // Folga pontual: data bloqueada pela proprietária não pode receber agendamento
+    const settings = await Settings.findOne()
+    if (settings?.blockedDates?.includes(date)) {
+      return res.status(409).json({ error: 'Esta data não está disponível para agendamento.' })
+    }
 
     // Upsert do cliente pelo telefone
     let client = await Client.findOneAndUpdate(

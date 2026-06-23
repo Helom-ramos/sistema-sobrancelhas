@@ -13,6 +13,9 @@ export async function getAvailableSlots(req, res, next) {
     ])
     if (!service) return res.status(404).json({ error: 'Serviço não encontrado' })
 
+    // Folga pontual: data específica bloqueada pela proprietária (não afeta o dia da semana)
+    if (settings.blockedDates?.includes(date)) return res.json([])
+
     const targetDate = new Date(`${date}T00:00:00-03:00`)
     const dayOfWeek = targetDate.getDay()
     const dayConfig = settings.workingHours.find(h => h.day === dayOfWeek)
