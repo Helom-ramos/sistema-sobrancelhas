@@ -71,6 +71,44 @@
         </section>
 
         <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
+          <h2 class="font-semibold text-white">Horários Especiais (datas)</h2>
+          <p class="text-xs text-zinc-500 -mt-2">Defina um horário diferente para datas específicas (ex.: festival) sem mudar a agenda semanal. Vale só nos dias escolhidos. Use o campo "até" para aplicar o mesmo horário a vários dias seguidos.</p>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-zinc-500 w-12 shrink-0">Data</span>
+              <input v-model="ov.date" type="date" class="inp" style="width:10rem;min-width:0" />
+              <span class="text-zinc-600 text-xs shrink-0">até (opcional)</span>
+              <input v-model="ov.dateEnd" type="date" class="inp" style="width:10rem;min-width:0" />
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-zinc-500 w-12 shrink-0">Horário</span>
+              <input v-model="ov.start" type="time" class="inp" style="padding:0.5rem 0.75rem;width:7.5rem;min-width:0" />
+              <span class="text-zinc-600 text-sm shrink-0">até</span>
+              <input v-model="ov.end" type="time" class="inp" style="padding:0.5rem 0.75rem;width:7.5rem;min-width:0" />
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-zinc-500 w-12 shrink-0">☕</span>
+              <input v-model="ov.breakStart" type="time" class="inp" placeholder="--:--" style="padding:0.4rem 0.6rem;width:7rem;min-width:0;font-size:0.75rem" />
+              <span class="text-zinc-600 text-xs shrink-0">às</span>
+              <input v-model="ov.breakEnd" type="time" class="inp" placeholder="--:--" style="padding:0.4rem 0.6rem;width:7rem;min-width:0;font-size:0.75rem" />
+              <span class="text-xs text-zinc-600 shrink-0">intervalo (opcional)</span>
+              <button type="button" @click="addOverride"
+                class="text-sm font-medium px-4 py-2 rounded-xl transition-colors shrink-0"
+                style="background:#2a2a2a;color:#e8557a">+ Adicionar horário</button>
+            </div>
+          </div>
+          <div v-if="form.dateOverrides.length" class="flex flex-wrap gap-2">
+            <span v-for="o in sortedOverrides" :key="o.date"
+              class="inline-flex items-center gap-2 text-sm rounded-lg px-3 py-1.5"
+              style="background:#0a1a14;border:1px solid #16a34a55;color:#86efac">
+              {{ formatDate(o.date) }} · {{ o.start }}–{{ o.end }}<template v-if="o.breakStart && o.breakEnd"> (☕ {{ o.breakStart }}–{{ o.breakEnd }})</template>
+              <button type="button" @click="removeOverride(o.date)" class="hover:text-white transition-colors" title="Remover">✕</button>
+            </span>
+          </div>
+          <p v-else class="text-xs text-zinc-600">Nenhum horário especial.</p>
+        </section>
+
+        <section class="rounded-2xl p-5 space-y-4" style="background:#1a1a1a;border:1px solid #2a2a2a">
           <h2 class="font-semibold text-white">Parâmetros</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -121,7 +159,7 @@ const form = ref({
   workingHours: [0,1,2,3,4,5,6].map(day => ({ day, active: day >= 1 && day <= 5, start: '09:00', end: '18:00', breakStart: '', breakEnd: '' })),
   breakBetweenAppointments: 10, advanceBookingDays: 30,
   reminderMinutesBefore: 30, noResponseAlertMinutes: 15,
-  blockedDates: []
+  blockedDates: [], dateOverrides: []
 })
 
 const newBlockedDate = ref('')
@@ -143,6 +181,37 @@ function formatDate(d) {
   return `${wd} ${day}/${m}/${y}`
 }
 
+// Horários especiais por data (ex.: festival)
+const ov = ref({ date: '', dateEnd: '', start: '09:00', end: '19:00', breakStart: '', breakEnd: '' })
+const sortedOverrides = computed(() => [...form.value.dateOverrides].sort((a, b) => a.date.localeCompare(b.date)))
+
+// Lista de datas YYYY-MM-DD de start a end (inclusive). Usa UTC só p/ rótulo de calendário.
+function eachDate(start, end) {
+  const dates = []
+  let d = new Date(`${start}T00:00:00Z`)
+  const last = new Date(`${end}T00:00:00Z`)
+  while (d <= last) {
+    dates.push(d.toISOString().slice(0, 10))
+    d.setUTCDate(d.getUTCDate() + 1)
+  }
+  return dates
+}
+
+function addOverride() {
+  if (!ov.value.date || !ov.value.start || !ov.value.end) return
+  const end = ov.value.dateEnd && ov.value.dateEnd >= ov.value.date ? ov.value.dateEnd : ov.value.date
+  for (const iso of eachDate(ov.value.date, end)) {
+    const entry = { date: iso, start: ov.value.start, end: ov.value.end, breakStart: ov.value.breakStart, breakEnd: ov.value.breakEnd }
+    const idx = form.value.dateOverrides.findIndex(o => o.date === iso)
+    if (idx >= 0) form.value.dateOverrides[idx] = entry
+    else form.value.dateOverrides.push(entry)
+  }
+  ov.value = { date: '', dateEnd: '', start: '09:00', end: '19:00', breakStart: '', breakEnd: '' }
+}
+function removeOverride(d) {
+  form.value.dateOverrides = form.value.dateOverrides.filter(o => o.date !== d)
+}
+
 onMounted(async () => {
   try {
     const res = await api.get('/settings')
@@ -155,6 +224,9 @@ onMounted(async () => {
         reminderMinutesBefore: s.reminderMinutesBefore ?? 30,
         noResponseAlertMinutes: s.noResponseAlertMinutes ?? 15,
         blockedDates: Array.isArray(s.blockedDates) ? s.blockedDates : [],
+        dateOverrides: Array.isArray(s.dateOverrides)
+          ? s.dateOverrides.map(o => ({ date: o.date, start: o.start, end: o.end, breakStart: o.breakStart || '', breakEnd: o.breakEnd || '' }))
+          : [],
       })
       if (s.workingHours?.length) {
         form.value.workingHours = s.workingHours.map(h => ({

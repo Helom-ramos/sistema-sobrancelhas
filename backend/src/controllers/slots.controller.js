@@ -18,7 +18,12 @@ export async function getAvailableSlots(req, res, next) {
 
     const targetDate = new Date(`${date}T00:00:00-03:00`)
     const dayOfWeek = targetDate.getDay()
-    const dayConfig = settings.workingHours.find(h => h.day === dayOfWeek)
+
+    // Horário especial para esta data (ex.: festival) sobrepõe a agenda semanal só neste dia
+    const override = settings.dateOverrides?.find(o => o.date === date)
+    const dayConfig = override
+      ? { active: true, start: override.start, end: override.end, breakStart: override.breakStart, breakEnd: override.breakEnd }
+      : settings.workingHours.find(h => h.day === dayOfWeek)
 
     if (!dayConfig?.active) return res.json([])
 

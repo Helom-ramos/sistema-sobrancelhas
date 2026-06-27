@@ -9,6 +9,15 @@ const workingHourSchema = new mongoose.Schema({
   active: { type: Boolean, default: true }
 }, { _id: false })
 
+// Horário especial para uma data específica (ex.: festival) — sobrepõe a agenda semanal só naquele dia
+const dateOverrideSchema = new mongoose.Schema({
+  date: { type: String },                    // 'YYYY-MM-DD'
+  start: { type: String, default: '09:00' },
+  end: { type: String, default: '19:00' },
+  breakStart: { type: String, default: '' }, // intervalo opcional naquele dia
+  breakEnd: { type: String, default: '' }
+}, { _id: false })
+
 const settingsSchema = new mongoose.Schema(
   {
     salonName: { type: String, default: 'Studio de Sobrancelhas' },
@@ -28,7 +37,8 @@ const settingsSchema = new mongoose.Schema(
     advanceBookingDays: { type: Number, default: 30 },
     reminderMinutesBefore: { type: Number, default: 30 },    // minutos antes para lembrete
     noResponseAlertMinutes: { type: Number, default: 15 },   // aviso à prop. se sem resposta
-    blockedDates: { type: [String], default: [] }            // folgas pontuais: ['2026-06-23', ...] (YYYY-MM-DD)
+    blockedDates: { type: [String], default: [] },           // folgas pontuais: ['2026-06-23', ...] (YYYY-MM-DD)
+    dateOverrides: { type: [dateOverrideSchema], default: [] } // horários especiais por data (ex.: festival)
   },
   { timestamps: true }
 )
