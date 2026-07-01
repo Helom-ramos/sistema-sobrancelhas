@@ -37,7 +37,8 @@ async function send(phone, message) {
   const res = await fetch(`${BASE_URL}/message/sendText/${INSTANCE}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: API_KEY },
-    body: JSON.stringify({ number: formatPhone(phone), textMessage: { text: message } })
+    // Evolution v2: payload achatado ({ number, text }). v1 usava { number, textMessage: { text } }.
+    body: JSON.stringify({ number: formatPhone(phone), text: message })
   })
   if (!res.ok) throw new Error(`Evolution API erro: ${res.status}`)
 }
