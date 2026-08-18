@@ -58,7 +58,7 @@ export async function sendBookingConfirmation(appointmentId) {
     `⏰ ${fmtTime(appt.datetime)}\n` +
     `💰 R$ ${appt.service.price.toFixed(2)}\n` +
     (settings?.address ? `📍 ${settings.address}\n` : '') +
-    `\nVou te enviar um lembrete 30 minutos antes. ✨\n\n` +
+    `\nVou te enviar um lembrete ${settings?.reminderMinutesBefore ?? 30} minutos antes. ✨\n\n` +
     `_Precisa cancelar? Acesse:_\n${cancelLink}`
 
   const ownerMsg =
@@ -76,9 +76,11 @@ export async function sendPresenceCheck(appointmentId) {
   const appt = await Appointment.findById(appointmentId).populate('client service')
   if (!appt || appt.confirmation.reminderSent) return
 
+  const settings = await Settings.findOne()
+
   const msg =
     `Olá, *${appt.client.name}*! 👋\n\n` +
-    `Seu horário é em *30 minutos*:\n` +
+    `Seu horário é em *${settings?.reminderMinutesBefore ?? 30} minutos*:\n` +
     `💆 ${appt.service.name}\n` +
     `⏰ ${fmtTime(appt.datetime)}\n\n` +
     `Te esperamos! 🌸`

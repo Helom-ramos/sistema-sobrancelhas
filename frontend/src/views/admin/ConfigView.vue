@@ -120,8 +120,9 @@
               <input v-model.number="form.advanceBookingDays" type="number" min="1" class="inp" />
             </div>
             <div>
-              <label class="lbl">Lembrete WhatsApp (min antes)</label>
-              <input v-model.number="form.reminderMinutesBefore" type="number" min="1" class="inp" />
+              <label class="lbl">Lembrete de confirmação (minutos antes)</label>
+              <input v-model.number="form.reminderMinutesBefore" type="number" min="5" max="1440" class="inp" />
+              <p class="text-xs text-zinc-600 mt-1">Quantos minutos antes do horário a cliente recebe a mensagem de lembrete (mínimo 5, máximo 1440).</p>
             </div>
             <div>
               <label class="lbl">Alerta sem resposta (min)</label>

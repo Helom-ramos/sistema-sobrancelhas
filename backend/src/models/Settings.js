@@ -35,8 +35,8 @@ const settingsSchema = new mongoose.Schema(
     ]},
     breakBetweenAppointments: { type: Number, default: 10 }, // minutos de intervalo
     advanceBookingDays: { type: Number, default: 30 },
-    reminderMinutesBefore: { type: Number, default: 30 },    // minutos antes para lembrete
-    noResponseAlertMinutes: { type: Number, default: 15 },   // aviso à prop. se sem resposta
+    reminderMinutesBefore: { type: Number, default: 30, min: 5, max: 1440 },  // minutos antes para lembrete
+    noResponseAlertMinutes: { type: Number, default: 15, min: 5, max: 120 }, // aviso à prop. se sem resposta
     blockedDates: { type: [String], default: [] },           // folgas pontuais: ['2026-06-23', ...] (YYYY-MM-DD)
     dateOverrides: { type: [dateOverrideSchema], default: [] } // horários especiais por data (ex.: festival)
   },
